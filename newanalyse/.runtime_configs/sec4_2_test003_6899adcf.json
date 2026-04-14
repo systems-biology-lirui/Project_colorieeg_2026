@@ -1,0 +1,42 @@
+{
+  "global": {
+    "subject": "test003"
+  },
+  "matlab_defaults": {
+    "run_permutation_test": true,
+    "n_perms": 500,
+    "time_smooth_win": 10
+  },
+  "steps": {
+    "Sec2_1_preprocess_erp": {
+      "run_permutation_test": true,
+      "n_perms": 500,
+      "time_smooth_win": 10,
+      "subject": "test003"
+    },
+    "Sec2_2_preprocess_highgamma": {
+      "run_permutation_test": true,
+      "n_perms": 500,
+      "time_smooth_win": 10,
+      "subject": "test003"
+    },
+    "Sec2_3_preprocess_lowgamma": {
+      "run_permutation_test": true,
+      "n_perms": 500,
+      "time_smooth_win": 10,
+      "subject": "test003"
+    },
+    "Sec2_4_preprocess_tfa": {
+      "run_permutation_test": true,
+      "n_perms": 500,
+      "time_smooth_win": 10,
+      "subject": "test003"
+    },
+    "Sec2_6_preprocess_gamma_multiband": {
+      "run_permutation_test": true,
+      "n_perms": 500,
+      "time_smooth_win": 10,
+      "subject": "test003"
+    }
+  }
+}

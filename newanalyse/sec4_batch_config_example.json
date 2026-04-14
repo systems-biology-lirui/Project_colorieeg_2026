@@ -1,0 +1,28 @@
+{
+  "subjects": [
+    "test001",
+    "test002"
+  ],
+  "run_preprocess": true,
+  "run_decoding": true,
+  "dry_run": false,
+  "stop_on_error": true,
+  "keep_runtime_config_files": false,
+  "global_overrides": {
+    "run_permutation_test": false,
+    "n_perms": 0,
+    "time_smooth_win": 10
+  },
+  "steps": {
+    "Sec2_2_preprocess_highgamma": {
+      "enabled": true,
+      "smooth_win": 20
+    },
+    "Sec3_1_all_roi_result_erp": {
+      "enabled": true,
+      "time_smooth_win": 10,
+      "run_permutation_test": false,
+      "n_perms": 0
+    }
+  }
+}

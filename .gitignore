@@ -1,0 +1,53 @@
+# --- 神经科学/数据分析常用 ---
+# 排除 MATLAB 数据文件（通常很大，不建议上云）
+*.mat
+# 排除 Python NumPy 数据文件
+*.npy
+*.npz
+# 排除原始数据表
+*.csv
+# 排除生成的日志文件
+*.log
+# 排除文献或生成的报告（如果不想传的话）
+*.pdf
+# 
+*.set
+*.fdt
+
+# --- Python 相关 ---
+# 排除 Python 缓存
+__pycache__/
+# 排除编译文件
+*.py[cod]
+# 排除虚拟环境文件夹
+venv/
+# 排除包含秘钥的环境变量文件
+.env
+
+# --- MATLAB 相关 ---
+bin/
+build/
+
+# --- 操作系统与编辑器 ---
+# macOS 系统的文件夹索引
+.DS_Store
+# Windows 的缩略图缓存
+Thumbs.db
+# VS Code 本地的设置（可选，建议排除以免干扰他人）
+.vscode/
+# PyCharm 的配置
+.idea/
+
+# --- 假如你有例外，比如某个小的配置数据需要上传 ---
+# !important_config.mat
+
+# --- picture ---
+*.png
+*.tif
+*.jpg
+*.txt
+*.cache
+
+mne_data/
+oldcode/
+python_libs/
