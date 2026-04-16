@@ -7,12 +7,16 @@
 clear;
 clc;
 
+script_timer = tic;
+
 % 启动并重置 EEGLAB 环境
 
 for i = 1:3
     task_label = i;
     preprocess_analyse(task_label)
 end
+
+fprintf('\n%s runtime: %.2f s\n', mfilename, toc(script_timer));
 
 function preprocess_analyse(task_label)
 clc;

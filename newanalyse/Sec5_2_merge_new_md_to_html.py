@@ -1,6 +1,7 @@
 import os
 import re
 import json
+import time
 import pandas as pd
 import ast
 import numpy as np
@@ -545,6 +546,7 @@ def generate_seeg_brain_map(band_data, title="SEEG ROI Brain Map"):
 # 主脚本
 # ──────────────────────────────────────────────────────────────
 parser = argparse.ArgumentParser(description='Generate multi-subject HTML report')
+_script_start_time = time.time()
 parser.add_argument('--subjects', nargs='+', default=['test001', 'test002'],
                     help='List of subject IDs to include')
 parser.add_argument('--base-dir',
@@ -926,3 +928,4 @@ with open(output_html, 'w', encoding='utf-8') as f:
     f.write(final_html)
 
 print(f"✅ HTML report generated: {output_html}")
+print(f"Total runtime: {time.time() - _script_start_time:.2f} s")

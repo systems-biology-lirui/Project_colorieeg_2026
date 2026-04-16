@@ -15,10 +15,10 @@ MATLAB_BIN = 'matlab'
 STOP_ON_ERROR = True
 DRY_RUN = False
 
-RUN_PREPROCESS = False
-RUN_DECODING = True
+RUN_PREPROCESS = True
+RUN_DECODING = False
 
-SUBJECTS = ['test003']
+SUBJECTS = ['test001']
 CONFIG_PATH = None
 KEEP_RUNTIME_CONFIG_FILES = False
 
@@ -42,7 +42,7 @@ PREPROCESS_STEPS = [
         'script_key': 'Sec2_1_preprocess_erp',
     },
     {
-        'enabled': True,
+        'enabled': False,
         'kind': 'matlab',
         'name': 'High-Gamma ROI Features',
         'script': NEWANALYSE_DIR / 'Sec2_2_preprocess_highgamma.m',
@@ -50,7 +50,7 @@ PREPROCESS_STEPS = [
         'script_key': 'Sec2_2_preprocess_highgamma',
     },
     {
-        'enabled': True,
+        'enabled': False,
         'kind': 'matlab',
         'name': 'Low-Gamma ROI Features',
         'script': NEWANALYSE_DIR / 'Sec2_3_preprocess_lowgamma.m',
@@ -58,7 +58,7 @@ PREPROCESS_STEPS = [
         'script_key': 'Sec2_3_preprocess_lowgamma',
     },
     {
-        'enabled': True,
+        'enabled': False,
         'kind': 'matlab',
         'name': 'TFA ROI Features',
         'script': NEWANALYSE_DIR / 'Sec2_4_preprocess_tfa.m',

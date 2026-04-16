@@ -2,6 +2,7 @@ import csv
 import json
 import math
 import os
+import time
 from pathlib import Path
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib")
@@ -509,4 +510,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    _script_start_time = time.time()
+    try:
+        main()
+    finally:
+        print(f"Total runtime: {time.time() - _script_start_time:.2f} s")

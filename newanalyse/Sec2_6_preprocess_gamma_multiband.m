@@ -13,6 +13,8 @@ function Sec2_6_preprocess_gamma_multiband()
 %   gmb_feature_band_index / gmb_feature_channel_index
 %   gmb_time_ms
 
+run_timer = tic;
+
 subject = 'test001';
 cfg = newanalyse_load_run_config(mfilename, {'matlab_defaults', 'sec2_defaults'});
 if isfield(cfg, 'subject')
@@ -189,4 +191,5 @@ catch ME
 end
 
 fclose(fid);
+fprintf('%s runtime: %.2f s\n', mfilename, toc(run_timer));
 end

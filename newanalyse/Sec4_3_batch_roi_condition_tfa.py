@@ -1,4 +1,5 @@
 import importlib.util
+import time
 from pathlib import Path
 
 from newanalyse_paths import project_root
@@ -68,4 +69,8 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    _script_start_time = time.time()
+    try:
+        main()
+    finally:
+        print(f"Total runtime: {time.time() - _script_start_time:.2f} s")

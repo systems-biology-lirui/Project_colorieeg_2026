@@ -1,6 +1,7 @@
 import html
 import importlib.util
 import json
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -443,4 +444,8 @@ def main():
 
 
 if __name__ == "__main__":
+  _script_start_time = time.time()
+  try:
     main()
+  finally:
+    print(f"Total runtime: {time.time() - _script_start_time:.2f} s")

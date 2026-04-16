@@ -1,6 +1,7 @@
 import os
 import glob
 import math
+import time
 from datetime import datetime
 import numpy as np
 import scipy.io as sio
@@ -836,4 +837,8 @@ def run_decoding_per_category(mat, category_pairs, shuffle=False, seed=None):
     return real_auc_matrix, real_sem_matrix, perm_dist_mean, perm_dist_all
 
 if __name__ == '__main__':
-    main()
+    _script_start_time = time.time()
+    try:
+        main()
+    finally:
+        print(f'Total runtime: {time.time() - _script_start_time:.2f} s')

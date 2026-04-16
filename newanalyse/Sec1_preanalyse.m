@@ -7,6 +7,8 @@
 clear;
 clc;
 
+script_timer = tic;
+
 cfg = newanalyse_load_run_config(mfilename, {'matlab_defaults', 'sec1_defaults'});
 subject = 'test001';
 if isfield(cfg, 'subject')
@@ -32,6 +34,8 @@ for i = 1:3
     task_label = i;
     preprocess_analyse(task_label, raw_data_dir, output_dir)
 end
+
+fprintf('\n%s runtime: %.2f s\n', mfilename, toc(script_timer));
 
 function preprocess_analyse(task_label, raw_data_dir, output_dir)
 clc;

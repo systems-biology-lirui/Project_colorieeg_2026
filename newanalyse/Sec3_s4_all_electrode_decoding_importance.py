@@ -2,6 +2,7 @@ import csv
 import math
 import os
 import re
+import time
 from datetime import datetime
 from pathlib import Path
 
@@ -36,7 +37,7 @@ BASE_PATH = project_root()
 # User Config
 # =========================
 SUBJECT = 'test001'
-FEATURE_KIND = 'erp'  # 'erp' | 'highgamma' | 'lowgamma' | 'tfa' | 'gamma' | 'gamma_multiband'
+FEATURE_KIND = 'highgamma'  # 'erp' | 'highgamma' | 'lowgamma' | 'tfa' | 'gamma' | 'gamma_multiband'
 
 ROI_PATTERN = '*.mat'
 SKIP_ROIS = {'Unknown', 'N_A'}
@@ -45,7 +46,7 @@ MAX_ELECTRODES = None
 N_SPLITS = 5
 N_REPEATS_REAL = 10
 N_REPEATS_PERM = N_REPEATS_REAL
-N_PERMS = 0
+N_PERMS = 100
 TIME_SMOOTH_WIN = 5
 DECODING_STEP = 5
 RANDOM_STATE = 42
@@ -58,7 +59,7 @@ N_POINTS = 550
 TIMES = np.linspace(T_START, T_END, N_POINTS)
 PLOT_TIMES = TIMES[::DECODING_STEP]
 
-RUN_PERMUTATION_TEST = False
+RUN_PERMUTATION_TEST = True
 IMPORTANCE_TOP_N = 20
 BATCH_NAME = 'all_electrode_decoding_importance'
 
@@ -1016,4 +1017,8 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    _script_start_time = time.time()
+    try:
+        main()
+    finally:
+        print(f'Total runtime: {time.time() - _script_start_time:.2f} s')

@@ -14,6 +14,8 @@ function Sec2_5_preprocess_gamma()
 %     - g_task2: [Cond, Rep, Ch, Time] 的High-Gamma能量
 %     - g_task3: [Cond, Rep, Ch, Time] 的High-Gamma能量
 
+run_timer = tic;
+
 subject = 'test001';
 
 paths = newanalyse_paths();
@@ -186,4 +188,5 @@ catch ME
     rethrow(ME);
 end
 fclose(fid);
+fprintf('%s runtime: %.2f s\n', mfilename, toc(run_timer));
 end

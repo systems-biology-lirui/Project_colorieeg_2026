@@ -15,6 +15,8 @@ function Sec2_4_preprocess_tfa()
 %   - 不在这里额外进行频带展开或 Band x Channel 拼接
 %   - 时间窗裁剪到 -100~1000ms，与现有 decoding 脚本一致
 
+run_timer = tic;
+
 subject = 'test001';
 cfg = newanalyse_load_run_config(mfilename, {'matlab_defaults', 'sec2_defaults'});
 if isfield(cfg, 'subject')
@@ -153,5 +155,6 @@ catch ME
 end
 
 fclose(fid);
+fprintf('%s runtime: %.2f s\n', mfilename, toc(run_timer));
 end
 

@@ -14,6 +14,8 @@ function Sec2_3_preprocess_lowgamma()
 %     - lg_task2: [Cond, Rep, Ch, Time] 的Low-Gamma能量
 %     - lg_task3: [Cond, Rep, Ch, Time] 的Low-Gamma能量
 
+run_timer = tic;
+
 subject = 'test001';
 cfg = newanalyse_load_run_config(mfilename, {'matlab_defaults', 'sec2_defaults'});
 if isfield(cfg, 'subject')
@@ -193,5 +195,6 @@ catch ME
     rethrow(ME);
 end
 fclose(fid);
+fprintf('%s runtime: %.2f s\n', mfilename, toc(run_timer));
 end
 

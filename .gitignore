@@ -47,6 +47,7 @@ Thumbs.db
 *.jpg
 *.txt
 *.cache
+*.bmp
 
 mne_data/
 oldcode/

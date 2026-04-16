@@ -17,6 +17,8 @@ function Sec2_1_preprocess_erp()
 %   - 保存路径与high-gamma相同（同一个ROI .mat文件中追加变量）
 %   - ERP不需要在Python中做基线z-score，pop_rmbase已在电压域完成校正
 
+run_timer = tic;
+
 subject = 'test003';
 cfg = newanalyse_load_run_config(mfilename, {'matlab_defaults', 'sec2_defaults'});
 if isfield(cfg, 'subject')
@@ -171,5 +173,6 @@ catch ME
 end
 
 fclose(fid);
+fprintf('%s runtime: %.2f s\n', mfilename, toc(run_timer));
 end
 

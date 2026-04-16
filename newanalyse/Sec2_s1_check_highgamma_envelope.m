@@ -10,6 +10,8 @@ function plot_envelope_comparison()
 %   由于预处理代码没有保存中间的滤波后信号(filtered_data)，
 %   本脚本需要重新加载原始数据并执行相同的滤波步骤来复现对比。
 
+run_timer = tic;
+
 subject = 'test002';
 paths = newanalyse_paths();
 base_path = paths.base_path;
@@ -173,5 +175,7 @@ sgtitle(sprintf('Task2 Cond4 High-Gamma: Filtered vs Envelope (%s)', subject));
 save_file = fullfile(save_dir, 'highgamma_envelope_check_task2_cond4.png');
 saveas(gcf, save_file);
 fprintf('对比图已保存: %s\n', save_file);
+
+fprintf('%s runtime: %.2f s\n', mfilename, toc(run_timer));
 
 end
