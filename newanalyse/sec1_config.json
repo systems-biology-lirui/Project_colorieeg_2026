@@ -1,0 +1,6 @@
+{
+  "sec1_defaults": {
+    "subject": "test001",
+    "remove_bad_epochs": false
+  }
+}

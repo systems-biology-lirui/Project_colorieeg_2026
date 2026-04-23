@@ -14,6 +14,7 @@ PYTHON_OVERRIDE_MAP = {
     'base_path': 'BASE_PATH',
     'feature_kind': 'FEATURE_KIND',
     'n_splits': 'N_SPLITS',
+    'n_reals': 'N_REALS',
     'n_repeats_real': 'N_REPEATS_REAL',
     'n_repeats_perm': 'N_REPEATS_PERM',
     'n_perms': 'N_PERMS',
@@ -25,6 +26,9 @@ PYTHON_OVERRIDE_MAP = {
     'roi_pattern': 'ROI_FILE_PATTERN',
     'max_electrodes': 'MAX_ELECTRODES',
     'run_permutation_test': 'RUN_PERMUTATION_TEST',
+    'use_groupeddata_pairing': 'USE_GROUPEDDATA_PAIRING',
+    'use_groupeddata_pair_centering': 'USE_GROUPEDDATA_PAIR_CENTERING',
+    'groupeddata_files': 'GROUPEDDATA_FILES',
     'tasks': 'TASKS',
 }
 

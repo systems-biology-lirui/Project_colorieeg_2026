@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>ROI Condition Stats Report</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 24px;
+      color: #222;
+      background: #f7f7f9;
+    }
+    h1, h2 {
+      margin: 0 0 12px 0;
+    }
+    .meta {
+      margin-bottom: 20px;
+      color: #555;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 24px;
+      background: #fff;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 8px 10px;
+      text-align: left;
+      vertical-align: top;
+      font-size: 13px;
+    }
+    th {
+      background: #eef1f6;
+    }
+    .controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+      gap: 18px;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid #ddd;
+      border-radius: 10px;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+    .card h3 {
+      margin: 0 0 8px 0;
+      font-size: 16px;
+    }
+    .card p {
+      margin: 4px 0;
+      font-size: 13px;
+      color: #444;
+    }
+    .thumb {
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-top: 10px;
+      background: #fff;
+    }
+    .small {
+      font-size: 12px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <h1>ROI Electrode Condition Stats</h1>
+  <div class="meta">
+    Subject: test001 |
+    Task: task1 |
+    Features: erp |
+    Baseline: -100 to 0 ms
+  </div>
+
+  <div class="controls">
+    <label>Feature
+      <select id="featureFilter">
+        <option value="">All</option>
+        <option value="erp">erp</option>
+      </select>
+    </label>
+    <label>Comparison
+      <select id="comparisonFilter">
+        <option value="">All</option>
+        <option value="1_vs_2">1_vs_2</option><option value="3_vs_4">3_vs_4</option><option value="5_vs_6">5_vs_6</option><option value="7_vs_8">7_vs_8</option><option value="137_vs_248">137_vs_248</option>
+      </select>
+    </label>
+    <label>ROI
+      <input id="roiFilter" type="text" placeholder="Type ROI name">
+    </label>
+  </div>
+
+  <h2>Overview</h2>
+  <table id="overviewTable">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Comparison</th>
+        <th>Group A</th>
+        <th>Group B</th>
+        <th>ROI Count</th>
+        <th>Total Channels</th>
+        <th>Significant Channels</th>
+        <th>Max Sig Points</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <h2>ROI Figures</h2>
+  <div id="cardGrid" class="card-grid"></div>
+
+  <h2>ROI Aggregate Table</h2>
+  <table id="roiTable">
+    <thead>
+      <tr>
+        <th>Feature</th>
+        <th>Comparison</th>
+        <th>ROI</th>
+        <th>Channels</th>
+        <th>Sig Channels</th>
+        <th>Max Sig Points</th>
+        <th>Figure</th>
+        <th>Stats CSV</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    const overviewData = [{"subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "137_vs_248", "group_a": "1,3,7", "group_b": "2,4,8", "n_roi": 1, "total_channels": 6, "total_sig_channels": 6, "max_sig_points_any_roi": 84}, {"subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "1_vs_2", "group_a": "1", "group_b": "2", "n_roi": 1, "total_channels": 6, "total_sig_channels": 5, "max_sig_points_any_roi": 37}, {"subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "3_vs_4", "group_a": "3", "group_b": "4", "n_roi": 1, "total_channels": 6, "total_sig_channels": 6, "max_sig_points_any_roi": 138}, {"subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "5_vs_6", "group_a": "5", "group_b": "6", "n_roi": 1, "total_channels": 6, "total_sig_channels": 6, "max_sig_points_any_roi": 86}, {"subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "7_vs_8", "group_a": "7", "group_b": "8", "n_roi": 1, "total_channels": 6, "total_sig_channels": 5, "max_sig_points_any_roi": 78}];
+    const roiData = [{"roi": "Color_with_sti", "n_channels": 6, "n_channels_with_sig": 6, "max_sig_points_one_channel": 84, "figure": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/137_vs_248/figures/Color_with_sti.png", "stats_csv": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/137_vs_248/stats/Color_with_sti.csv", "subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "137_vs_248", "group_a": "1,3,7", "group_b": "2,4,8", "group_a_label": "Cond 1,3,7", "group_b_label": "Cond 2,4,8", "roi_summary_csv": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/137_vs_248/roi_summary.csv", "figure_rel": "erp/137_vs_248/figures/Color_with_sti.png", "stats_csv_rel": "erp/137_vs_248/stats/Color_with_sti.csv"}, {"roi": "Color_with_sti", "n_channels": 6, "n_channels_with_sig": 5, "max_sig_points_one_channel": 37, "figure": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/1_vs_2/figures/Color_with_sti.png", "stats_csv": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/1_vs_2/stats/Color_with_sti.csv", "subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "1_vs_2", "group_a": "1", "group_b": "2", "group_a_label": "Cond 1", "group_b_label": "Cond 2", "roi_summary_csv": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/1_vs_2/roi_summary.csv", "figure_rel": "erp/1_vs_2/figures/Color_with_sti.png", "stats_csv_rel": "erp/1_vs_2/stats/Color_with_sti.csv"}, {"roi": "Color_with_sti", "n_channels": 6, "n_channels_with_sig": 6, "max_sig_points_one_channel": 138, "figure": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/3_vs_4/figures/Color_with_sti.png", "stats_csv": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/3_vs_4/stats/Color_with_sti.csv", "subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "3_vs_4", "group_a": "3", "group_b": "4", "group_a_label": "Cond 3", "group_b_label": "Cond 4", "roi_summary_csv": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/3_vs_4/roi_summary.csv", "figure_rel": "erp/3_vs_4/figures/Color_with_sti.png", "stats_csv_rel": "erp/3_vs_4/stats/Color_with_sti.csv"}, {"roi": "Color_with_sti", "n_channels": 6, "n_channels_with_sig": 6, "max_sig_points_one_channel": 86, "figure": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/5_vs_6/figures/Color_with_sti.png", "stats_csv": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/5_vs_6/stats/Color_with_sti.csv", "subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "5_vs_6", "group_a": "5", "group_b": "6", "group_a_label": "Cond 5", "group_b_label": "Cond 6", "roi_summary_csv": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/5_vs_6/roi_summary.csv", "figure_rel": "erp/5_vs_6/figures/Color_with_sti.png", "stats_csv_rel": "erp/5_vs_6/stats/Color_with_sti.csv"}, {"roi": "Color_with_sti", "n_channels": 6, "n_channels_with_sig": 5, "max_sig_points_one_channel": 78, "figure": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/7_vs_8/figures/Color_with_sti.png", "stats_csv": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/7_vs_8/stats/Color_with_sti.csv", "subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "7_vs_8", "group_a": "7", "group_b": "8", "group_a_label": "Cond 7", "group_b_label": "Cond 8", "roi_summary_csv": "/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/result/reports/roi_electrode_condition_stats_batch_colorpatch1/test001/erp/7_vs_8/roi_summary.csv", "figure_rel": "erp/7_vs_8/figures/Color_with_sti.png", "stats_csv_rel": "erp/7_vs_8/stats/Color_with_sti.csv"}];
+    const channelData = [{"subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "137_vs_248", "group_a": "1,3,7", "group_b": "2,4,8", "roi": "Color_with_sti", "n_electrodes": 6, "n_sig_electrodes": 6, "max_sig_points": 84, "min_p": 0.0004692544053148}, {"subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "1_vs_2", "group_a": "1", "group_b": "2", "roi": "Color_with_sti", "n_electrodes": 6, "n_sig_electrodes": 5, "max_sig_points": 37, "min_p": 0.0025639228458303}, {"subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "3_vs_4", "group_a": "3", "group_b": "4", "roi": "Color_with_sti", "n_electrodes": 6, "n_sig_electrodes": 6, "max_sig_points": 138, "min_p": 0.0007030589344226}, {"subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "5_vs_6", "group_a": "5", "group_b": "6", "roi": "Color_with_sti", "n_electrodes": 6, "n_sig_electrodes": 6, "max_sig_points": 86, "min_p": 0.0002991434599342}, {"subject": "test001", "task": "task1", "feature_kind": "erp", "comparison_id": "7_vs_8", "group_a": "7", "group_b": "8", "roi": "Color_with_sti", "n_electrodes": 6, "n_sig_electrodes": 5, "max_sig_points": 78, "min_p": 0.001125735324695}];
+
+    function q(id) {
+      return document.getElementById(id);
+    }
+
+    function filteredRoiData() {
+      const feature = q('featureFilter').value.trim();
+      const comparison = q('comparisonFilter').value.trim();
+      const roiText = q('roiFilter').value.trim().toLowerCase();
+      return roiData.filter(row =>
+        (!feature || row.feature_kind === feature) &&
+        (!comparison || row.comparison_id === comparison) &&
+        (!roiText || row.roi.toLowerCase().includes(roiText))
+      );
+    }
+
+    function renderOverview(filteredRows) {
+      const allowed = new Set(filteredRows.map(r => `${r.feature_kind}|${r.comparison_id}|${r.group_a}|${r.group_b}`));
+      const rows = overviewData.filter(r => allowed.size === 0 || allowed.has(`${r.feature_kind}|${r.comparison_id}|${r.group_a}|${r.group_b}`));
+      q('overviewTable').querySelector('tbody').innerHTML = rows.map(r => `
+        <tr>
+          <td>${r.feature_kind}</td>
+          <td>${r.comparison_id}</td>
+          <td>${r.group_a}</td>
+          <td>${r.group_b}</td>
+          <td>${r.n_roi}</td>
+          <td>${r.total_channels}</td>
+          <td>${r.total_sig_channels}</td>
+          <td>${r.max_sig_points_any_roi}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderRoiTable(filteredRows) {
+      q('roiTable').querySelector('tbody').innerHTML = filteredRows.map(r => `
+        <tr>
+          <td>${r.feature_kind}</td>
+          <td>${r.comparison_id}</td>
+          <td>${r.roi}</td>
+          <td>${r.n_channels}</td>
+          <td>${r.n_channels_with_sig}</td>
+          <td>${r.max_sig_points_one_channel}</td>
+          <td><a href="${r.figure_rel}" target="_blank">figure</a></td>
+          <td><a href="${r.stats_csv_rel}" target="_blank">csv</a></td>
+        </tr>
+      `).join('');
+    }
+
+    function renderCards(filteredRows) {
+      q('cardGrid').innerHTML = filteredRows.map(r => `
+        <div class="card">
+          <h3>${r.roi}</h3>
+          <p><strong>${r.feature_kind}</strong> | ${r.comparison_id}</p>
+          <p>sig channels: ${r.n_channels_with_sig} / ${r.n_channels}</p>
+          <p class="small">
+            group A: ${r.group_a_label} (${r.group_a})
+            <br>
+            group B: ${r.group_b_label} (${r.group_b})
+          </p>
+          <p><a href="${r.figure_rel}" target="_blank">Open figure</a> |
+             <a href="${r.stats_csv_rel}" target="_blank">Open csv</a></p>
+          <img class="thumb" src="${r.figure_rel}" alt="${r.roi}">
+        </div>
+      `).join('');
+    }
+
+    function renderAll() {
+      const filteredRows = filteredRoiData();
+      renderOverview(filteredRows);
+      renderRoiTable(filteredRows);
+      renderCards(filteredRows);
+    }
+
+    q('featureFilter').addEventListener('change', renderAll);
+    q('comparisonFilter').addEventListener('change', renderAll);
+    q('roiFilter').addEventListener('input', renderAll);
+    renderAll();
+  </script>
+</body>
+</html>

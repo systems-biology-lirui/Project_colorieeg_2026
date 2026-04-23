@@ -18,7 +18,7 @@ SCRIPT_PATH = BASE_PATH / "newanalyse" / "Sec3_s1_roi_electrode_condition_erp_st
 # =========================
 SUBJECT = "test001"
 TASK = "task1"
-FEATURE_KINDS = ["erp", "lowgamma", "highgamma"]
+FEATURE_KINDS = ["erp"]
 
 COMPARISONS = [
     {"id": "1_vs_2", "group_a": [1], "group_b": [2], "label_a": "Cond 1", "label_b": "Cond 2"},
@@ -34,10 +34,10 @@ TMIN_MS = -100.0
 BASELINE_START_MS = -100.0
 BASELINE_END_MS = 0.0
 ROI = None
-ROI_PATTERN = "*.mat"
+ROI_PATTERN = "Color_with*.mat"
 DPI = 220
 
-OUTPUT_ROOT = get_report_dir(BASE_PATH, 'roi_electrode_condition_stats_batch_colorpatch') / SUBJECT
+OUTPUT_ROOT = get_report_dir(BASE_PATH, 'roi_electrode_condition_stats_batch_colorpatch1') / SUBJECT
 
 
 def load_single_run_module():

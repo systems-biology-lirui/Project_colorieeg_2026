@@ -14,6 +14,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import roc_auc_score
 from joblib import Parallel, delayed
 from scipy.ndimage import label
+from runtime_config import load_runtime_config
 
 from newanalyse_paths import (
     get_cross_decoding_batch_dir,
@@ -24,8 +25,10 @@ from newanalyse_paths import (
 
 SUBJECT = 'test001'
 BASE_PATH = str(project_root())
-FEATURE_DIR = str(get_feature_dir(BASE_PATH, 'decoding_lowgamma_features', SUBJECT))
+FEATURE_SUBDIR = 'decoding_lowgamma_features'
+FEATURE_DIR = str(get_feature_dir(BASE_PATH, FEATURE_SUBDIR, SUBJECT))
 
+N_REALS = 100
 N_REPEATS_REAL = 10
 N_REPEATS_PERM = N_REPEATS_REAL
 N_PERMS = 200
@@ -33,6 +36,8 @@ TIME_SMOOTH_WIN = 5
 DECODING_STEP = 5
 RANDOM_STATE = 42
 N_JOBS = -1
+RUN_PERMUTATION_TEST = True
+ROI_FILE_PATTERN = '*.mat'
 
 FS = 500
 T_START = -100
@@ -59,8 +64,40 @@ CROSS_TASKS = [
 ]
 
 
+_RUNTIME_CFG = load_runtime_config(__file__, sections=('python_defaults', 'sec3_defaults'))
+if _RUNTIME_CFG:
+    SUBJECT = str(_RUNTIME_CFG.get('subject', SUBJECT))
+    BASE_PATH = str(_RUNTIME_CFG.get('base_path', BASE_PATH))
+    N_REALS = int(_RUNTIME_CFG.get('n_reals', N_REALS))
+    N_REPEATS_REAL = int(_RUNTIME_CFG.get('n_repeats_real', N_REPEATS_REAL))
+    N_REPEATS_PERM = int(_RUNTIME_CFG.get('n_repeats_perm', N_REPEATS_PERM))
+    N_PERMS = int(_RUNTIME_CFG.get('n_perms', N_PERMS))
+    TIME_SMOOTH_WIN = int(_RUNTIME_CFG.get('time_smooth_win', TIME_SMOOTH_WIN))
+    DECODING_STEP = int(_RUNTIME_CFG.get('decoding_step', DECODING_STEP))
+    RANDOM_STATE = int(_RUNTIME_CFG.get('random_state', RANDOM_STATE))
+    N_JOBS = int(_RUNTIME_CFG.get('n_jobs', N_JOBS))
+    RUN_PERMUTATION_TEST = bool(_RUNTIME_CFG.get('run_permutation_test', RUN_PERMUTATION_TEST))
+    BATCH_NAME = str(_RUNTIME_CFG.get('batch_name', BATCH_NAME))
+    ROI_FILE_PATTERN = str(_RUNTIME_CFG.get('roi_pattern', ROI_FILE_PATTERN))
+    if 'tasks' in _RUNTIME_CFG:
+        CROSS_TASKS = _RUNTIME_CFG['tasks']
+
+FEATURE_DIR = str(_RUNTIME_CFG.get('feature_dir', get_feature_dir(BASE_PATH, FEATURE_SUBDIR, SUBJECT))) if _RUNTIME_CFG else str(get_feature_dir(BASE_PATH, FEATURE_SUBDIR, SUBJECT))
+
+TIMES = np.linspace(T_START, T_END, N_POINTS)
+PLOT_TIMES = TIMES[::DECODING_STEP]
+
+
+def should_run_permutation_test():
+    return bool(RUN_PERMUTATION_TEST and N_PERMS > 0)
+
+
+def get_perm_tag():
+    return f'perm{N_PERMS}' if should_run_permutation_test() else 'real_only'
+
+
 def main():
-    mat_files = sorted(glob.glob(os.path.join(FEATURE_DIR, '*.mat')))
+    mat_files = sorted(glob.glob(os.path.join(FEATURE_DIR, ROI_FILE_PATTERN)))
     if not mat_files:
         print(f'No ROI file found: {FEATURE_DIR}')
         return
@@ -73,9 +110,10 @@ def main():
     logger(f'Start cross-decoding batch for {SUBJECT}')
     logger(f'Feature dir: {FEATURE_DIR}')
     logger(f'ROI count: {len(mat_files)}')
+    logger(f'n_real={N_REALS}, n_repeats_real={N_REPEATS_REAL}, n_repeats_perm={N_REPEATS_PERM}, n_perm={N_PERMS}')
 
     for task in CROSS_TASKS:
-        output_dir = str(get_cross_decoding_task_dir(BASE_PATH, task['id'], 'lowgamma', SUBJECT, 'perm1000', batch_name=BATCH_NAME))
+        output_dir = str(get_cross_decoding_task_dir(BASE_PATH, task['id'], 'lowgamma', SUBJECT, get_perm_tag(), batch_name=BATCH_NAME))
         cache_dir = os.path.join(output_dir, 'computed_results')
         roi_plot_dir = os.path.join(output_dir, 'roi_curves')
         os.makedirs(output_dir, exist_ok=True)
@@ -123,18 +161,33 @@ def process_cross_task_roi(fpath, roi_name, task, save_path, roi_plot_dir, logge
         X_train, X_test = X_train_raw, X_test_raw
 
     real_auc_matrix = run_cross_decoding_over_time(X_train, y_train, X_test, y_test, n_repeats=N_REPEATS_REAL, shuffle=False, seed=RANDOM_STATE)
-    perm_dist = Parallel(n_jobs=N_JOBS)(
-        delayed(run_cross_decoding_over_time_mean)(
-            X_train, y_train, X_test, y_test,
-            n_repeats=N_REPEATS_PERM,
-            shuffle=True,
-            seed=i
-        ) for i in range(N_PERMS)
+    real_auc_runs = run_real_curve_distribution(
+        np.mean(real_auc_matrix, axis=1),
+        lambda real_seed: run_cross_decoding_over_time_mean(
+            X_train,
+            y_train,
+            X_test,
+            y_test,
+            n_repeats=N_REPEATS_REAL,
+            shuffle=False,
+            seed=real_seed,
+        ),
     )
-    perm_dist = np.array(perm_dist)
+    perm_dist = run_permutation_distribution(
+        lambda shuffle, seed: run_cross_decoding_over_time_mean(
+            X_train,
+            y_train,
+            X_test,
+            y_test,
+            n_repeats=N_REPEATS_PERM,
+            shuffle=shuffle,
+            seed=seed,
+        ),
+        real_auc_matrix.shape[0],
+    )
 
-    mean_auc = np.mean(real_auc_matrix, axis=1)
-    sem_auc = np.std(real_auc_matrix, axis=1, ddof=0) / np.sqrt(real_auc_matrix.shape[1])
+    mean_auc = np.mean(real_auc_runs, axis=0)
+    sem_auc = np.std(real_auc_runs, axis=0, ddof=0) / np.sqrt(real_auc_runs.shape[0])
     threshold_95, sig_indices = cluster_permutation_significance(mean_auc, perm_dist)
     latencies = compute_latency_points(mean_auc, sig_indices)
 
@@ -145,12 +198,17 @@ def process_cross_task_roi(fpath, roi_name, task, save_path, roi_plot_dir, logge
         threshold_95=threshold_95,
         sig_indices=sig_indices,
         real_auc_matrix=real_auc_matrix,
+        real_auc_runs=real_auc_runs,
         perm_dist=perm_dist,
         latency_earliest=latencies['earliest'],
         latency_half_height=latencies['half_height'],
         latency_peak=latencies['peak'],
         task_id=np.array(task['id']),
-        task_title=np.array(task['title'])
+        task_title=np.array(task['title']),
+        n_real=np.array(N_REALS),
+        n_repeats_real=np.array(N_REPEATS_REAL),
+        n_repeats_perm=np.array(N_REPEATS_PERM),
+        n_perm=np.array(N_PERMS),
     )
     plot_single_roi_result(
         roi_name=roi_name,
@@ -222,6 +280,23 @@ def run_cross_decoding_over_time_mean(X_train, y_train, X_test, y_test, n_repeat
     return np.mean(run_cross_decoding_over_time(X_train, y_train, X_test, y_test, n_repeats=n_repeats, shuffle=shuffle, seed=seed), axis=1)
 
 
+def run_permutation_distribution(run_mean_curve_fn, n_timepoints):
+    if not should_run_permutation_test():
+        return np.full((0, n_timepoints), np.nan)
+    perm_results = Parallel(n_jobs=N_JOBS)(delayed(run_mean_curve_fn)(True, i) for i in range(N_PERMS))
+    return np.array(perm_results)
+
+
+def run_real_curve_distribution(first_curve, run_mean_curve_fn):
+    first_curve = np.asarray(first_curve, dtype=float)
+    if N_REALS <= 1:
+        return first_curve[None, :]
+    extra_results = Parallel(n_jobs=N_JOBS)(
+        delayed(run_mean_curve_fn)(RANDOM_STATE + i) for i in range(1, N_REALS)
+    )
+    return np.vstack([first_curve[None, :], np.asarray(extra_results, dtype=float)])
+
+
 def safe_auc(y_true, y_prob):
     return roc_auc_score(y_true, y_prob) if len(np.unique(y_true)) > 1 else 0.5
 
@@ -236,6 +311,8 @@ def smooth_data_causal(X, win_size):
 
 
 def cluster_permutation_significance(mean_auc, perm_dist):
+    if perm_dist is None or np.size(perm_dist) == 0:
+        return np.full(mean_auc.shape, np.nan, dtype=float), np.zeros_like(mean_auc, dtype=bool)
     threshold_95 = np.percentile(perm_dist, 95, axis=0)
     binary_map = mean_auc > threshold_95
     clusters, n_clusters = label(binary_map.astype(int))

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>心得 | Decoding 方案与统计逻辑</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <strong>Decoding 方案与统计逻辑</strong>
+            <nav class="nav">
+                <a href="index.html">首页</a>
+                <a href="01_overview.html">总览</a>
+                <a href="02_preprocess_and_features.html">预处理与特征</a>
+                <a href="03_decoding_workflows.html">Decoding 方案</a>
+                <a href="04_pca_and_paired.html">PCA 与配对分析</a>
+                <a href="06_visual_schematics.html">可视化示意</a>
+                <a href="05_code_map.html">代码地图</a>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <span class="eyebrow">03 / Decoding</span>
+            <h1>主线解码并不是一张图，而是一套标准化的时间点循环</h1>
+            <p class="lead">
+                当前仓库中的绝大多数 decoding 本质上都是 time-resolved decoding：先在每个时间点上取出 trial × feature 矩阵，再做标准化、LDA、交叉验证和 permutation。不同脚本的差异，主要来自输入特征、任务定义和显著性策略，而不是分类器本身。
+            </p>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">解码原理图</p>
+                    <h2>单个 ROI 的 time-resolved decoding 是怎么跑起来的</h2>
+                </div>
+            </div>
+            <div class="diagram-wrap">
+                <svg class="diagram" viewBox="0 0 1180 470" xmlns="http://www.w3.org/2000/svg" aria-label="Decoding 原理图">
+                    <defs>
+                        <marker id="arrow-dec" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+                            <path d="M0,0 L12,6 L0,12 z" fill="#1b6a78"/>
+                        </marker>
+                    </defs>
+                    <rect x="30" y="50" width="194" height="112" rx="24" fill="#fff7ef" stroke="#a34331" stroke-width="2"/>
+                    <text x="56" y="84" font-size="24" fill="#17242b" font-weight="700">ROI 特征张量</text>
+                    <text x="56" y="116" font-size="17" fill="#5e696f">[Cond, Rep, Ch/Feat, Time]</text>
+                    <text x="56" y="142" font-size="17" fill="#5e696f">来源于 Sec2 输出</text>
+
+                    <rect x="270" y="50" width="196" height="112" rx="24" fill="#f5fbfc" stroke="#1b6a78" stroke-width="2"/>
+                    <text x="296" y="84" font-size="24" fill="#17242b" font-weight="700">条件切片</text>
+                    <text x="296" y="116" font-size="17" fill="#5e696f">选定 task 与 condition</text>
+                    <text x="296" y="142" font-size="17" fill="#5e696f">拼成 [Trial, Feat, Time]</text>
+
+                    <rect x="512" y="50" width="208" height="112" rx="24" fill="#fffdf7" stroke="#d89d36" stroke-width="2"/>
+                    <text x="538" y="84" font-size="24" fill="#17242b" font-weight="700">预处理 trial</text>
+                    <text x="538" y="116" font-size="17" fill="#5e696f">baseline z-score</text>
+                    <text x="538" y="142" font-size="17" fill="#5e696f">可选时间平滑 smooth_win</text>
+
+                    <rect x="766" y="50" width="192" height="112" rx="24" fill="#f6f7ff" stroke="#6f77b3" stroke-width="2"/>
+                    <text x="792" y="84" font-size="24" fill="#17242b" font-weight="700">逐时间点分类</text>
+                    <text x="792" y="116" font-size="17" fill="#5e696f">StandardScaler + LDA</text>
+                    <text x="792" y="142" font-size="17" fill="#5e696f">CV / repeated CV</text>
+
+                    <rect x="1002" y="50" width="150" height="112" rx="24" fill="#fff7ef" stroke="#a34331" stroke-width="2"/>
+                    <text x="1028" y="84" font-size="24" fill="#17242b" font-weight="700">输出曲线</text>
+                    <text x="1028" y="116" font-size="17" fill="#5e696f">ACC / AUC</text>
+                    <text x="1028" y="142" font-size="17" fill="#5e696f">SEM</text>
+
+                    <rect x="230" y="252" width="332" height="148" rx="28" fill="#fffaf4" stroke="#17242b" stroke-width="2"/>
+                    <text x="262" y="292" font-size="24" fill="#17242b" font-weight="700">Permutation null</text>
+                    <text x="262" y="324" font-size="17" fill="#5e696f">打乱 label 或在 pair 内交换 label</text>
+                    <text x="262" y="350" font-size="17" fill="#5e696f">重复得到 null 曲线分布</text>
+                    <text x="262" y="376" font-size="17" fill="#5e696f">计算 95% threshold</text>
+
+                    <rect x="642" y="252" width="332" height="148" rx="28" fill="#fffaf4" stroke="#17242b" stroke-width="2"/>
+                    <text x="674" y="292" font-size="24" fill="#17242b" font-weight="700">Cluster significance</text>
+                    <text x="674" y="324" font-size="17" fill="#5e696f">基于连续显著时间点形成 cluster</text>
+                    <text x="674" y="350" font-size="17" fill="#5e696f">比较 cluster mass 与 null 最大质量</text>
+                    <text x="674" y="376" font-size="17" fill="#5e696f">输出 earliest / peak / half-height</text>
+
+                    <line x1="224" y1="106" x2="270" y2="106" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-dec)"/>
+                    <line x1="466" y1="106" x2="512" y2="106" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-dec)"/>
+                    <line x1="720" y1="106" x2="766" y2="106" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-dec)"/>
+                    <line x1="958" y1="106" x2="1002" y2="106" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-dec)"/>
+                    <path d="M866 162 C866 208, 514 220, 446 252" fill="none" stroke="#a34331" stroke-width="4" marker-end="url(#arrow-dec)"/>
+                    <path d="M1078 162 C1078 214, 962 226, 808 252" fill="none" stroke="#d89d36" stroke-width="4" marker-end="url(#arrow-dec)"/>
+                </svg>
+                <p class="diagram-caption">从脚本实现上看，主要变量差异是任务定义、特征来源、时间平滑大小、真实运行和 permutation 的重复次数，以及显著性窗口是否限制刺激前时间点。</p>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">主线脚本</p>
+                    <h2>newanalyse 里的主要 decoding 分支</h2>
+                </div>
+                <p>这些脚本面向正式主结果，输入相对稳定，输出目录和参数体系也更统一。</p>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>分析类型</th>
+                            <th>代表脚本</th>
+                            <th>输入对象</th>
+                            <th>主要回答的问题</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ERP within decoding</td>
+                            <td><a href="../newanalyse/Sec3_1_all_roi_result_erp.py">Sec3_1_all_roi_result_erp.py</a></td>
+                            <td>ERP ROI 特征</td>
+                            <td>不同任务定义下，某 ROI 在时间上何时能区分类别或条件</td>
+                        </tr>
+                        <tr>
+                            <td>High / Low gamma within decoding</td>
+                            <td><a href="../newanalyse/Sec3_2_all_roi_result_high.py">Sec3_2_all_roi_result_high.py</a>、<a href="../newanalyse/Sec3_3_all_roi_result_low.py">Sec3_3_all_roi_result_low.py</a></td>
+                            <td>Hilbert gamma 包络 ROI 特征</td>
+                            <td>高频活动是否比 ERP 更早或更强地区分条件</td>
+                        </tr>
+                        <tr>
+                            <td>TFA branch decoding</td>
+                            <td><a href="../newanalyse/Sec3_4_all_roi_result_tfa.py">Sec3_4_all_roi_result_tfa.py</a></td>
+                            <td>1-150 Hz 宽频 ROI 输入</td>
+                            <td>宽频分支的时域解码，不是完整时频张量解码</td>
+                        </tr>
+                        <tr>
+                            <td>Gamma / gamma_multiband</td>
+                            <td><a href="../newanalyse/Sec3_5_all_roi_result_gamma.py">Sec3_5_all_roi_result_gamma.py</a>、<a href="../newanalyse/Sec3_6_all_roi_result_gamma_multiband.py">Sec3_6_all_roi_result_gamma_multiband.py</a></td>
+                            <td>宽频 gamma 或多频带 ROI 特征</td>
+                            <td>比较不同 gamma 表达方式在时序和显著性上的差异</td>
+                        </tr>
+                        <tr>
+                            <td>Cross decoding</td>
+                            <td><a href="../newanalyse/Sec3_7_all_roi_result_cross.py">Sec3_7_all_roi_result_cross.py</a></td>
+                            <td>两个任务或任务定义间的共用 ROI 特征</td>
+                            <td>一个任务里学到的判别边界能否泛化到另一个任务</td>
+                        </tr>
+                        <tr>
+                            <td>补充统计与电极级分析</td>
+                            <td><a href="../newanalyse/Sec3_s1_roi_electrode_condition_erp_stats.py">Sec3_s1_roi_electrode_condition_erp_stats.py</a>、<a href="../newanalyse/Sec3_s2_roi_condition_tfa.py">Sec3_s2_roi_condition_tfa.py</a>、<a href="../newanalyse/Sec3_s4_all_electrode_decoding_importance.py">Sec3_s4_all_electrode_decoding_importance.py</a></td>
+                            <td>ERP / TFR / 全电极</td>
+                            <td>补充 ROI 内条件统计、真实 Morlet TFR 比较和电极贡献解释</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">实验脚本</p>
+                    <h2>testcode 里的方法学对照不是冗余，而是在补解释</h2>
+                </div>
+            </div>
+            <div class="three-col">
+                <article class="card">
+                    <strong><a href="../testcode/compare_task1_color_gray_fourclass.py">compare_task1_color_gray_fourclass.py</a></strong>
+                    <p class="muted">在 Task1 上分别做 color 图和 gray 图的四分类，比较颜色信息是否改变类别解码构建。现在支持多模态输入。</p>
+                </article>
+                <article class="card">
+                    <strong><a href="../testcode/compare_acc_auc_significance_erp.py">compare_acc_auc_significance_erp.py</a></strong>
+                    <p class="muted">比较同一 ROI 在 ACC 与 AUC 指标下的 real curve、threshold 与 latency，回答“用哪个指标解释更稳定”。</p>
+                </article>
+                <article class="card">
+                    <strong><a href="../testcode/compare_perm_regimes_erp.py">compare_perm_regimes_erp.py</a></strong>
+                    <p class="muted">比较不同 permutation 组织方式，比如 `10x100` 与 `1x1000`，看阈值和经验 p 值如何变化。</p>
+                </article>
+                <article class="card">
+                    <strong><a href="../testcode/audit_sec3_s4_electrode_selection.py">audit_sec3_s4_electrode_selection.py</a></strong>
+                    <p class="muted">审计全电极 decoding 的选择逻辑，解释某些 channel 为什么被选中，某些 channel 为什么被跳过。</p>
+                </article>
+                <article class="card">
+                    <strong><a href="../testcode/task1_paired_decoding/README.md">task1_paired_decoding</a></strong>
+                    <p class="muted">围绕 Task1 中 color-gray 一对一配对关系设计的专门分析区，支持 paired decoding、PCA trajectory 和 cosine similarity。</p>
+                </article>
+                <article class="card">
+                    <strong>为什么要保留这些脚本</strong>
+                    <p class="muted">它们不只是“测试代码”，而是在验证指标、Permutation 组织方式、paired 假设和电极选择规则是否稳健。</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">解释风险</p>
+                    <h2>当前 decoding 结果需要记住的三个约束</h2>
+                </div>
+            </div>
+            <div class="cards">
+                <article class="card">
+                    <strong>不同模态的刺激前屏蔽规则不完全一致</strong>
+                    <p class="muted">ERP / TFA 主 decoding 默认屏蔽 20 ms 以前时间点，但部分 gamma 线没有完全同步这个约束，所以 earliest latency 跨模态比较要谨慎。</p>
+                </article>
+                <article class="card">
+                    <strong>分类器差异不是主要来源</strong>
+                    <p class="muted">主线里大量脚本都在用 `StandardScaler + LDA(shrinkage='auto')`。真正更关键的是输入特征、trial 组织和 permutation 策略。</p>
+                </article>
+                <article class="card">
+                    <strong>路径规则已经被统一封装</strong>
+                    <p class="muted">结果目录建议通过 <a href="../newanalyse/newanalyse_paths.py">newanalyse_paths.py</a> 理解，而不是靠猜测目录名。这样更容易看清 batch 与 task 输出的关系。</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="quote">
+                Decoding 页最重要的结论是：这个仓库里的“分类”不是黑箱模型探索，而是一套相当固定的时间点判别框架。真正值得比较的是输入定义、假设结构和统计阈值，而不是分类器花样。
+            </div>
+            <div class="page-links">
+                <a href="04_pca_and_paired.html">下一页：PCA 与配对分析</a>
+                <a class="secondary" href="02_preprocess_and_features.html">返回上一页</a>
+            </div>
+        </section>
+
+        <footer class="footer">
+            这一页关注解码主线和统计逻辑。下一页会专门解释 PCA、paired color-gray 方案、动态轨迹图和余弦相似度图。
+        </footer>
+    </main>
+</body>
+</html>

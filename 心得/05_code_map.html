@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>心得 | 代码地图与入口脚本</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <strong>代码地图与入口脚本</strong>
+            <nav class="nav">
+                <a href="index.html">首页</a>
+                <a href="01_overview.html">总览</a>
+                <a href="02_preprocess_and_features.html">预处理与特征</a>
+                <a href="03_decoding_workflows.html">Decoding 方案</a>
+                <a href="04_pca_and_paired.html">PCA 与配对分析</a>
+                <a href="06_visual_schematics.html">可视化示意</a>
+                <a href="05_code_map.html">代码地图</a>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <span class="eyebrow">05 / Code Map</span>
+            <h1>要动代码时，先找到正确入口</h1>
+            <p class="lead">
+                这页不是按文件名罗列，而是按“你想做什么”来给出入口。这样后续无论你是加一个新模态、改一条批处理命令，还是补一类 paired 图，都可以先定位到该看的文件，不必在整个仓库里来回搜索。
+            </p>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">目录职责</p>
+                    <h2>仓库里的主要区域各自负责什么</h2>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>目录</th>
+                            <th>职责</th>
+                            <th>建议先看哪些文件</th>
+                            <th>典型输出</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>newanalyse</td>
+                            <td>正式主线，含预处理、ROI 特征、主 decoding、批处理和汇总</td>
+                            <td><a href="../newanalyse/readme.md">readme.md</a>、<a href="../newanalyse/Sec1_preanalyse.m">Sec1_preanalyse.m</a>、<a href="../newanalyse/newanalyse_paths.py">newanalyse_paths.py</a></td>
+                            <td>processed_data、feature、result 下的正式结果</td>
+                        </tr>
+                        <tr>
+                            <td>testcode</td>
+                            <td>实验性分析、方法学对照、paired color-gray 分析与审计</td>
+                            <td><a href="../testcode/compare_task1_color_gray_fourclass.py">compare_task1_color_gray_fourclass.py</a>、<a href="../testcode/task1_paired_decoding/README.md">task1_paired_decoding/README.md</a></td>
+                            <td>result/reports 下的解释性图和对照输出</td>
+                        </tr>
+                        <tr>
+                            <td>processed_data</td>
+                            <td>被试级 task epoch 数据与 trial 元数据</td>
+                            <td>关注每个 subject 下的 `task*_ERP_epoched.mat` 与 `task*_TFA_epoched.mat`</td>
+                            <td>后续所有特征与 paired 重排的上游</td>
+                        </tr>
+                        <tr>
+                            <td>feature</td>
+                            <td>ROI 特征文件仓库</td>
+                            <td>按 modality/subject/roi `.mat` 查找</td>
+                            <td>主线 decoding 与实验脚本的直接输入</td>
+                        </tr>
+                        <tr>
+                            <td>result</td>
+                            <td>正式结果、批处理输出与汇总报告</td>
+                            <td>关注 `decoding`、`cross_decoding`、`reports` 子树</td>
+                            <td>图、CSV、NPZ、HTML 报告</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">最常用入口</p>
+                    <h2>如果你要做 X，先打开 Y</h2>
+                </div>
+            </div>
+            <div class="three-col">
+                <article class="card">
+                    <strong>重新生成 task 级 epoch</strong>
+                    <p class="muted">先看 <a href="../newanalyse/Sec1_preanalyse.m">Sec1_preanalyse.m</a>。如果你的问题和 trial 丢失、坏段剔除、repeat 索引有关，也要先看它。</p>
+                </article>
+                <article class="card">
+                    <strong>增加或检查某个模态的 ROI 特征</strong>
+                    <p class="muted">先看对应的 `Sec2_*`，再看 <a href="../newanalyse/get_roi_map.m">get_roi_map.m</a>。如果涉及输出路径，再补看 <a href="../newanalyse/newanalyse_paths.py">newanalyse_paths.py</a>。</p>
+                </article>
+                <article class="card">
+                    <strong>修改主线 decoding 任务定义</strong>
+                    <p class="muted">先看 `Sec3_*` 中对应模态的主脚本，确认 `TASKS` 或任务配置里真正启用的是哪一项，而不是只看文件名。</p>
+                </article>
+                <article class="card">
+                    <strong>批量跑多个被试或模态</strong>
+                    <p class="muted">先看 <a href="../newanalyse/Sec4_2_batch_run_modalities.py">Sec4_2_batch_run_modalities.py</a> 和 <a href="../newanalyse/sec4_batch_config_example.json">sec4_batch_config_example.json</a>。</p>
+                </article>
+                <article class="card">
+                    <strong>输出或重组 HTML 报告</strong>
+                    <p class="muted">先看 <a href="../newanalyse/Sec5_2_merge_new_md_to_html.py">Sec5_2_merge_new_md_to_html.py</a>，它负责把 Markdown 汇总成可浏览页面。</p>
+                </article>
+                <article class="card">
+                    <strong>研究 color-gray 配对问题</strong>
+                    <p class="muted">直接从 <a href="../testcode/task1_paired_decoding/README.md">task1_paired_decoding/README.md</a> 进入，再按脚本决定是做 decoding、PCA trajectory 还是 cosine。</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">运行顺序</p>
+                    <h2>一个较稳妥的阅读与执行顺序</h2>
+                </div>
+            </div>
+            <div class="two-col">
+                <article class="card">
+                    <strong>推荐执行顺序</strong>
+                    <ol>
+                        <li>确认 `processed_data/{subject}` 是否已有最新的 epoch 与元数据。</li>
+                        <li>运行需要的 `Sec2_*` 生成对应 ROI 特征。</li>
+                        <li>运行对应 `Sec3_*` 主 decoding 或 `Sec3_s*` 统计脚本。</li>
+                        <li>需要批处理时改 `sec4_batch_config_example.json`，再用 `Sec4_2_batch_run_modalities.py`。</li>
+                        <li>针对特殊问题，再用 `testcode` 做扩展解释或对照。</li>
+                    </ol>
+                </article>
+                <article class="card">
+                    <strong>推荐阅读顺序</strong>
+                    <ol>
+                        <li>先理解 `newanalyse/readme.md` 对数据契约的说明。</li>
+                        <li>再读 `Sec1_preanalyse.m`，确认 trial 到底如何保留。</li>
+                        <li>然后读一个 `Sec2_*` 和一个 `Sec3_*`，看数据对象如何被消费。</li>
+                        <li>最后再读 `testcode`，把它当作研究问题的附加镜头，而不是主流水线本体。</li>
+                    </ol>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">辅助文件</p>
+                    <h2>这些文件不显眼，但在维护时非常关键</h2>
+                </div>
+            </div>
+            <div class="cards">
+                <article class="card">
+                    <strong><a href="../newanalyse/newanalyse_paths.py">newanalyse_paths.py</a></strong>
+                    <p class="muted">统一处理 feature 目录、decoding 目录、cross-decoding 目录和 reports 目录。想搞清路径时先看这里。</p>
+                </article>
+                <article class="card">
+                    <strong><a href="../newanalyse/runtime_config.py">runtime_config.py</a></strong>
+                    <p class="muted">与批处理配置、运行时参数注入有关。配合 `Sec4_2_batch_run_modalities.py` 使用更容易理解自动跑批行为。</p>
+                </article>
+                <article class="card">
+                    <strong><a href="../newanalyse/batch_runner_utils.py">batch_runner_utils.py</a></strong>
+                    <p class="muted">负责批处理时的模块加载、override 应用和 runtime config 写入，适合排查批处理到底替换了哪些参数。</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="quote">
+                真正高效的维护方式不是记住所有脚本，而是记住“同一类问题总是落在哪个层级”。trial 问题回到 `Sec1`，模态问题回到 `Sec2`，主结果问题回到 `Sec3`，批量运行问题回到 `Sec4`，研究假设问题回到 `testcode`。
+            </div>
+            <div class="page-links">
+                <a href="index.html">回首页</a>
+                <a class="secondary" href="04_pca_and_paired.html">返回上一页</a>
+            </div>
+        </section>
+
+        <footer class="footer">
+            这套心得页面到这里构成一个完整闭环：从刺激结构、预处理和特征，到 decoding、PCA、paired 分析，再回到代码入口与维护路径。
+        </footer>
+    </main>
+</body>
+</html>

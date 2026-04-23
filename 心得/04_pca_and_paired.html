@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>心得 | PCA 与配对 color-gray 分析</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <strong>PCA 与配对 color-gray 分析</strong>
+            <nav class="nav">
+                <a href="index.html">首页</a>
+                <a href="01_overview.html">总览</a>
+                <a href="02_preprocess_and_features.html">预处理与特征</a>
+                <a href="03_decoding_workflows.html">Decoding 方案</a>
+                <a href="04_pca_and_paired.html">PCA 与配对分析</a>
+                <a href="06_visual_schematics.html">可视化示意</a>
+                <a href="05_code_map.html">代码地图</a>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <span class="eyebrow">04 / PCA & Paired</span>
+            <h1>paired color-gray 分析把“同一张图的两种版本”显式用起来</h1>
+            <p class="lead">
+                `testcode/task1_paired_decoding` 的价值，在于它不再把 color 和 gray 只当作两组独立 trial，而是把同一张图片的彩色版与灰度版配成一对。这样既能做更针对性的二分类，也能做更干净的 PCA 解释和相似度追踪。
+            </p>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">groupedData 前提</p>
+                    <h2>配对分析成立的前提，是 pair id 与保留 trial 对齐</h2>
+                </div>
+                <p>`groupedData` 约定为 4 × 2 cell：行对应类别，列对应 color / gray。同一行里同一个数值 id 表示同一张图片。</p>
+            </div>
+            <div class="two-col">
+                <article class="card">
+                    <strong>理想输入</strong>
+                    <p class="muted">如果 trial 没有被剔除，那么每个 cell 内部的位置就直接等于 repeat index。但当前主线会先做 bad epoch 剔除和 min-trial 截断，所以这个假设通常不再自动成立。</p>
+                </article>
+                <article class="card">
+                    <strong>当前实现</strong>
+                    <p class="muted">paired 脚本会先读取 `processed_data` 中保存的 repeat 元数据，再把 `groupedData` 重排到 ROI 张量真正保存下来的 repeat 轴，然后才开始匹配 pair。</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">PCA 原理图</p>
+                    <h2>PCA 在这里不是降维炫技，而是为了让颜色效应更可视</h2>
+                </div>
+            </div>
+            <div class="diagram-wrap">
+                <svg class="diagram" viewBox="0 0 1180 460" xmlns="http://www.w3.org/2000/svg" aria-label="PCA 原理图">
+                    <defs>
+                        <marker id="arrow-pca" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+                            <path d="M0,0 L12,6 L0,12 z" fill="#1b6a78"/>
+                        </marker>
+                    </defs>
+                    <rect x="34" y="54" width="240" height="126" rx="24" fill="#fff7ef" stroke="#a34331" stroke-width="2"/>
+                    <text x="62" y="88" font-size="22" fill="#17242b" font-weight="700">高维 trial / mean signal</text>
+                    <text x="62" y="118" font-size="16" fill="#5e696f">每个样本 = 多通道或多特征 × 时间窗</text>
+                    <text x="62" y="144" font-size="16" fill="#5e696f">也可以是每个时间点的条件均值向量</text>
+
+                    <rect x="322" y="54" width="212" height="126" rx="24" fill="#f5fbfc" stroke="#1b6a78" stroke-width="2"/>
+                    <text x="350" y="88" font-size="24" fill="#17242b" font-weight="700">标准化</text>
+                    <text x="350" y="118" font-size="16" fill="#5e696f">StandardScaler</text>
+                    <text x="350" y="144" font-size="16" fill="#5e696f">避免某个通道量纲过大</text>
+
+                    <rect x="582" y="54" width="216" height="126" rx="24" fill="#fffdf7" stroke="#d89d36" stroke-width="2"/>
+                    <text x="610" y="88" font-size="24" fill="#17242b" font-weight="700">PCA</text>
+                    <text x="610" y="118" font-size="16" fill="#5e696f">寻找最大方差方向</text>
+                    <text x="610" y="144" font-size="16" fill="#5e696f">PC1, PC2, PC3 是线性组合</text>
+
+                    <rect x="846" y="54" width="298" height="126" rx="24" fill="#f6f7ff" stroke="#6f77b3" stroke-width="2"/>
+                    <text x="874" y="88" font-size="24" fill="#17242b" font-weight="700">低维解释图</text>
+                    <text x="874" y="118" font-size="16" fill="#5e696f">pairwise scatter / 2D trajectory / 3D trajectory</text>
+                    <text x="874" y="144" font-size="16" fill="#5e696f">并在轴上标记 explained variance</text>
+
+                    <rect x="192" y="262" width="334" height="134" rx="28" fill="#fffaf4" stroke="#17242b" stroke-width="2"/>
+                    <text x="224" y="298" font-size="24" fill="#17242b" font-weight="700">raw version</text>
+                    <text x="224" y="328" font-size="17" fill="#5e696f">保留颜色 + 图像内容共同变化</text>
+                    <text x="224" y="354" font-size="17" fill="#5e696f">适合先看总体分离趋势</text>
+
+                    <rect x="648" y="262" width="334" height="134" rx="28" fill="#fffaf4" stroke="#17242b" stroke-width="2"/>
+                    <text x="680" y="298" font-size="24" fill="#17242b" font-weight="700">centered version</text>
+                    <text x="680" y="328" font-size="17" fill="#5e696f">从每对样本中减去 pair mean</text>
+                    <text x="680" y="354" font-size="17" fill="#5e696f">更接近“纯颜色差异”的残差信号</text>
+
+                    <line x1="274" y1="117" x2="322" y2="117" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-pca)"/>
+                    <line x1="534" y1="117" x2="582" y2="117" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-pca)"/>
+                    <line x1="798" y1="117" x2="846" y2="117" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-pca)"/>
+                    <path d="M716 180 C716 216, 806 234, 814 262" fill="none" stroke="#a34331" stroke-width="4" marker-end="url(#arrow-pca)"/>
+                    <path d="M664 180 C664 216, 474 234, 438 262" fill="none" stroke="#d89d36" stroke-width="4" marker-end="url(#arrow-pca)"/>
+                </svg>
+                <p class="diagram-caption">PCA 在这些脚本里的职责很清楚：把高维时间窗或均值向量压缩到 2D/3D，以便观察 color 与 gray 是否沿着同一主轴分离、不同类别是否走出不同轨迹。</p>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">三种 paired decoding</p>
+                    <h2>不同方案实际上对应不同的研究假设</h2>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>脚本</th>
+                            <th>核心操作</th>
+                            <th>最适合回答的问题</th>
+                            <th>主要风险</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><a href="../testcode/task1_paired_decoding/paired_group_cv_decoding.py">paired_group_cv_decoding.py</a></td>
+                            <td>使用原始 color / gray trial，但在分折时保持同一 pair 进同一 fold</td>
+                            <td>如果不去掉图像内容，只要求“同图不同颜色”能否被分开</td>
+                            <td>图像本身的共享结构仍然存在，颜色效应可能被图像主效应覆盖</td>
+                        </tr>
+                        <tr>
+                            <td><a href="../testcode/task1_paired_decoding/within_pair_centered_decoding.py">within_pair_centered_decoding.py</a></td>
+                            <td>每对样本都减去 pair mean，再做 color-gray 分类</td>
+                            <td>去掉图像共享部分之后，残差信号是否还能区分颜色状态</td>
+                            <td>如果 pair 本身噪声很高，中心化会同时放大不稳定性</td>
+                        </tr>
+                        <tr>
+                            <td><a href="../testcode/task1_paired_decoding/pair_difference_decoding.py">pair_difference_decoding.py</a></td>
+                            <td>构造 `+(color-gray)` 与 `-(color-gray)` 两类 signed difference</td>
+                            <td>最直接地抓颜色差异向量，问颜色效应是否本身可解码</td>
+                            <td>最依赖 pair 对齐质量，对错配和单对异常值都更敏感</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">解释性图形</p>
+                    <h2>paired 文件夹里的三类可视化分别在看什么</h2>
+                </div>
+            </div>
+            <div class="three-col">
+                <article class="card">
+                    <strong><a href="../testcode/task1_paired_decoding/plot_pairwise_pca.py">plot_pairwise_pca.py</a></strong>
+                    <p class="muted">在指定时间窗内做 raw、centered、difference 三种 PCA 投影。适合看 pair 连线、类别分布和颜色分离方向。</p>
+                    <div class="chips">
+                        <span class="chip">selected-categories</span>
+                        <span class="chip">explained variance 标注</span>
+                    </div>
+                </article>
+                <article class="card">
+                    <strong><a href="../testcode/task1_paired_decoding/plot_condition_pca_trajectories.py">plot_condition_pca_trajectories.py</a></strong>
+                    <p class="muted">对每个条件的均值信号随时间做 PCA trajectory，分别输出 2D 与 3D 图，同时给 raw 与 centered 版本。</p>
+                    <div class="chips">
+                        <span class="chip">smooth-win</span>
+                        <span class="chip">时间轨迹</span>
+                    </div>
+                </article>
+                <article class="card">
+                    <strong><a href="../testcode/task1_paired_decoding/plot_condition_cosine_similarity.py">plot_condition_cosine_similarity.py</a></strong>
+                    <p class="muted">计算每个类别中 color 与 gray 的均值向量在时间上的 cosine similarity，分别看 raw 与 centered 情况。</p>
+                    <div class="chips">
+                        <span class="chip">smooth-win</span>
+                        <span class="chip">raw vs centered</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">怎么读这些图</p>
+                    <h2>PCA 和余弦图背后的最小解释框架</h2>
+                </div>
+            </div>
+            <div class="cards">
+                <article class="card">
+                    <strong>如果 raw PCA 已经明显分离</strong>
+                    <p class="muted">说明颜色状态确实在总体信号空间里占据一定方差方向，但这时还不能说明它脱离了图像内容。</p>
+                </article>
+                <article class="card">
+                    <strong>如果 centered PCA 仍然分离</strong>
+                    <p class="muted">说明扣掉 pair shared content 之后，颜色效应仍有稳定几何结构，这比 raw 分离更有解释力。</p>
+                </article>
+                <article class="card">
+                    <strong>如果 cosine similarity 下降</strong>
+                    <p class="muted">说明 color 与 gray 在该类别上的空间方向开始分叉。若 centered similarity 也下降，更支持颜色本身在改变表征。</p>
+                </article>
+                <article class="card">
+                    <strong>如果 trajectory 轨迹分开但 decoding 不显著</strong>
+                    <p class="muted">说明均值结构存在可视差异，但 trial-level 波动或样本量可能还不足以支撑稳定分类。</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="quote">
+                paired analysis 的关键不是“让分类更高”，而是让颜色效应与图像内容尽量分开解释。PCA、trajectory 和 cosine similarity 都是在帮你回答同一个问题：颜色改变的是平均位置、变化方向，还是两者都有。
+            </div>
+            <div class="page-links">
+                <a href="06_visual_schematics.html">看可视化示意页</a>
+                <a href="05_code_map.html">下一页：代码地图</a>
+                <a class="secondary" href="03_decoding_workflows.html">返回上一页</a>
+            </div>
+        </section>
+
+        <footer class="footer">
+            这一页是偏解释的研究工具页。最后一页会把真正需要常用的入口脚本、批处理文件和路径辅助文件列成一张代码地图。
+        </footer>
+    </main>
+</body>
+</html>

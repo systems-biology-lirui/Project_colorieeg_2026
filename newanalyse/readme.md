@@ -223,6 +223,37 @@ ROI 分组入口统一是 `get_roi_map(loc_file, common_channels)`。
 
 所以实际运行前要先看清楚每个 `TASKS` 里真正启用的是哪一项，而不是只看文件名。
 
+### 5.2.1 groupedData 配对选项
+
+`Sec3_1/2/3/4/5/6_all_roi_result_*.py` 和 `Sec3_s4_all_electrode_decoding_importance.py` 现在支持一个可选的 `groupedData` 配对流程，用来先按图片 id 做 color/gray 一一配对，再进入 decoding：
+
+1. 同一 category 内 color 和 gray 的 repeat 数会先对齐到真正匹配到的样本数。
+2. 配对启用后，不再使用普通 trial-level 分层 CV，而是改成按 pair id 做 grouped CV，避免同一图片对泄漏到训练集和测试集两边。
+3. 置换检验也会改成 pair 内标签交换，而不是对全部 trial 完全打乱。
+4. 如果再启用 `use_groupeddata_pair_centering`，则会先对每一对 color/gray trial 做常规 baseline / smoothing，然后从二者各自减去该对 trial 的均值，再进入 decoding。
+
+可用配置项：
+
+1. 顶层开关：`USE_GROUPEDDATA_PAIRING = True`，或 batch config 中的 `use_groupeddata_pairing: true`
+2. 可选的 pair-mean centering：`USE_GROUPEDDATA_PAIR_CENTERING = True`，或 batch config 中的 `use_groupeddata_pair_centering: true`
+3. groupedData 路径表：`GROUPEDDATA_FILES = {'task1': '...', 'task2': '...', 'task3': '...'}`
+4. task 级覆盖：
+
+```python
+{
+	'id': 'task2_color_vs_gray_per_category',
+	'mode': 'within_category_color_gray',
+	'task_name': 'task2',
+	'category_pairs': [(0, 1), (2, 3), (4, 5), (6, 7)],
+	'category_names': ['face', 'body', 'object', 'scene'],
+	'use_groupeddata_pairing': True,
+	'use_groupeddata_pair_centering': True,
+	'groupeddata_mat': 'path/to/task2_groupedData.mat',
+}
+```
+
+当前默认只给 `task1` 预置了 `category_pairs` / `category_names`。未来 `task2`、`task3` 只要补上各自的 groupedData 文件和 task 配置，就不需要再改核心代码。
+
 ### 5.3 模态间显著性窗口不一致
 
 ERP 与 TFA 主 decoding 的 `cluster_permutation_significance()` 会显式屏蔽 `20 ms` 以前的时间点。

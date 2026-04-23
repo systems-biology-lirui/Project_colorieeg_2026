@@ -22,6 +22,13 @@ from sklearn.model_selection import RepeatedStratifiedKFold, StratifiedKFold
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
+from groupeddata_pairing import (
+    center_paired_trials,
+    load_paired_category_trials,
+    resolve_within_category_task,
+    run_grouped_auc_over_time,
+    stack_paired_binary_trials,
+)
 from runtime_config import load_runtime_config
 from newanalyse_paths import (
     get_all_electrode_summary_path,
@@ -44,6 +51,7 @@ SKIP_ROIS = {'Unknown', 'N_A'}
 MAX_ELECTRODES = None
 
 N_SPLITS = 5
+N_REALS = 100
 N_REPEATS_REAL = 10
 N_REPEATS_PERM = N_REPEATS_REAL
 N_PERMS = 100
@@ -62,6 +70,15 @@ PLOT_TIMES = TIMES[::DECODING_STEP]
 RUN_PERMUTATION_TEST = True
 IMPORTANCE_TOP_N = 20
 BATCH_NAME = 'all_electrode_decoding_importance'
+USE_GROUPEDDATA_PAIRING = False
+USE_GROUPEDDATA_PAIR_CENTERING = False
+GROUPEDDATA_FILES = {'task1': '', 'task2': '', 'task3': ''}
+DEFAULT_CATEGORY_PAIRS_BY_TASK = {
+    'task1': [(0, 1), (2, 3), (4, 5), (6, 7)],
+}
+DEFAULT_CATEGORY_NAMES_BY_TASK = {
+    'task1': ['face', 'body', 'object', 'scene'],
+}
 
 TASKS = [
     {
@@ -69,6 +86,7 @@ TASKS = [
         'title': 'Task 1 Color vs Gray Per-Category All-Electrode Decoding',
         'description': 'Use all available electrode sites directly without ROI grouping.',
         'mode': 'within_category_color_gray',
+        'task_name': 'task1',
         'folder': 'task1_color_vs_gray_per_category',
     },
 ]
@@ -128,6 +146,7 @@ if _RUNTIME_CFG:
     ROI_PATTERN = str(_RUNTIME_CFG.get('roi_pattern', ROI_PATTERN))
     MAX_ELECTRODES = _RUNTIME_CFG.get('max_electrodes', MAX_ELECTRODES)
     N_SPLITS = int(_RUNTIME_CFG.get('n_splits', N_SPLITS))
+    N_REALS = int(_RUNTIME_CFG.get('n_reals', N_REALS))
     N_REPEATS_REAL = int(_RUNTIME_CFG.get('n_repeats_real', N_REPEATS_REAL))
     N_REPEATS_PERM = int(_RUNTIME_CFG.get('n_repeats_perm', N_REPEATS_PERM))
     N_PERMS = int(_RUNTIME_CFG.get('n_perms', N_PERMS))
@@ -138,6 +157,10 @@ if _RUNTIME_CFG:
     RUN_PERMUTATION_TEST = bool(_RUNTIME_CFG.get('run_permutation_test', RUN_PERMUTATION_TEST))
     IMPORTANCE_TOP_N = int(_RUNTIME_CFG.get('importance_top_n', IMPORTANCE_TOP_N))
     BATCH_NAME = str(_RUNTIME_CFG.get('batch_name', BATCH_NAME))
+    USE_GROUPEDDATA_PAIRING = bool(_RUNTIME_CFG.get('use_groupeddata_pairing', USE_GROUPEDDATA_PAIRING))
+    USE_GROUPEDDATA_PAIR_CENTERING = bool(_RUNTIME_CFG.get('use_groupeddata_pair_centering', USE_GROUPEDDATA_PAIR_CENTERING))
+    if 'groupeddata_files' in _RUNTIME_CFG:
+        GROUPEDDATA_FILES = dict(_RUNTIME_CFG['groupeddata_files'])
     if 'tasks' in _RUNTIME_CFG:
         TASKS = _RUNTIME_CFG['tasks']
 
@@ -273,6 +296,19 @@ def get_time_vector(mat, n_time):
         if times.size == n_time:
             return times
     return T_START + np.arange(n_time, dtype=float) * (1000.0 / FS)
+
+
+def resolve_within_category_spec(task):
+    return resolve_within_category_task(
+        task,
+        field_prefix=FEATURE_CONFIG[FEATURE_KIND]['field_prefix'],
+        default_task_name='task1',
+        default_category_pairs=DEFAULT_CATEGORY_PAIRS_BY_TASK,
+        default_category_names=DEFAULT_CATEGORY_NAMES_BY_TASK,
+        use_groupeddata_pairing=USE_GROUPEDDATA_PAIRING,
+        use_groupeddata_pair_centering=USE_GROUPEDDATA_PAIR_CENTERING,
+        groupeddata_files=GROUPEDDATA_FILES,
+    )
 
 
 def build_task_field(task_name):
@@ -509,22 +545,62 @@ def build_task2_gray_memory_combos_prepared(data_bank):
     return {'mode': 'cross_combo_task2_gray', 'combo_data': prepared}
 
 
-def build_within_category_prepared(data_bank):
-    data = data_bank['task1']
+def build_within_category_prepared(data_bank, task):
+    within_category_spec = resolve_within_category_spec(task)
+    data = data_bank[within_category_spec['task_name']]
     baseline_end = np.searchsorted(TIMES, 0)
-    category_pairs = [(0, 1), (2, 3), (4, 5), (6, 7)]
-    category_names = ['face', 'body', 'object', 'scene']
     category_data = []
-    for color_index, gray_index in category_pairs:
-        color_samples = data[color_index, :, :, :]
-        gray_samples = data[gray_index, :, :, :]
-        samples = np.concatenate([color_samples, gray_samples], axis=0)
-        labels = np.concatenate([np.zeros(color_samples.shape[0]), np.ones(gray_samples.shape[0])])
-        samples = baseline_zscore(samples, baseline_end)
-        if TIME_SMOOTH_WIN > 0:
-            samples = smooth_data_causal(samples, TIME_SMOOTH_WIN)
-        category_data.append((samples, labels))
-    return {'mode': 'within_category_color_gray', 'category_data': category_data, 'category_names': category_names}
+    matched_pair_counts = []
+
+    if within_category_spec['use_groupeddata_pairing']:
+        paired_categories = load_paired_category_trials(
+            BASE_PATH,
+            SUBJECT,
+            FEATURE_KIND,
+            within_category_spec['task_name'],
+            within_category_spec['groupeddata_mat'],
+            data,
+            within_category_spec['category_pairs'],
+            within_category_spec['category_names'],
+        )
+        for paired_category in paired_categories:
+            pair_count = paired_category.color.shape[0]
+            samples = np.concatenate([paired_category.color, paired_category.gray], axis=0)
+            samples = baseline_zscore(samples, baseline_end)
+            if TIME_SMOOTH_WIN > 0:
+                samples = smooth_data_causal(samples, TIME_SMOOTH_WIN)
+            color_samples = samples[:pair_count]
+            gray_samples = samples[pair_count:]
+            if within_category_spec['use_groupeddata_pair_centering']:
+                color_samples, gray_samples = center_paired_trials(color_samples, gray_samples)
+            samples, labels, groups = stack_paired_binary_trials(
+                color_samples,
+                gray_samples,
+                paired_category.pair_ids,
+            )
+            category_data.append((samples, labels, groups))
+            matched_pair_counts.append(paired_category.matched_count)
+    else:
+        for color_index, gray_index in within_category_spec['category_pairs']:
+            color_samples = data[color_index, :, :, :]
+            gray_samples = data[gray_index, :, :, :]
+            samples = np.concatenate([color_samples, gray_samples], axis=0)
+            labels = np.concatenate([np.zeros(color_samples.shape[0]), np.ones(gray_samples.shape[0])])
+            samples = baseline_zscore(samples, baseline_end)
+            if TIME_SMOOTH_WIN > 0:
+                samples = smooth_data_causal(samples, TIME_SMOOTH_WIN)
+            category_data.append((samples, labels, None))
+            matched_pair_counts.append(int(min(color_samples.shape[0], gray_samples.shape[0])))
+    return {
+        'mode': 'within_category_color_gray',
+        'category_data': category_data,
+        'category_names': within_category_spec['category_names'],
+        'task_name': within_category_spec['task_name'],
+        'use_groupeddata_pairing': within_category_spec['use_groupeddata_pairing'],
+        'use_groupeddata_pair_centering': within_category_spec['use_groupeddata_pair_centering'],
+        'groupeddata_mat': str(within_category_spec['groupeddata_mat'] or ''),
+        'matched_pair_counts': np.asarray(matched_pair_counts, dtype=int),
+    }
 
 
 def prepare_task_data(data_bank, task):
@@ -536,7 +612,7 @@ def prepare_task_data(data_bank, task):
     if mode == 'cross_combo_task2_gray':
         return build_task2_gray_memory_combos_prepared(data_bank)
     if mode == 'within_category_color_gray':
-        return build_within_category_prepared(data_bank)
+        return build_within_category_prepared(data_bank, task)
     raise ValueError(f"Unsupported mode: {mode}")
 
 
@@ -569,9 +645,18 @@ def select_prepared_features(prepared, feature_indices):
         return {'mode': mode, 'combo_data': combo_data}
     if mode == 'within_category_color_gray':
         category_data = []
-        for samples, labels in prepared['category_data']:
-            category_data.append((samples[:, feature_indices, :], labels))
-        return {'mode': mode, 'category_data': category_data, 'category_names': prepared['category_names']}
+        for samples, labels, groups in prepared['category_data']:
+            category_data.append((samples[:, feature_indices, :], labels, groups))
+        return {
+            'mode': mode,
+            'category_data': category_data,
+            'category_names': prepared['category_names'],
+            'task_name': prepared.get('task_name', 'task1'),
+            'use_groupeddata_pairing': prepared.get('use_groupeddata_pairing', False),
+            'use_groupeddata_pair_centering': prepared.get('use_groupeddata_pair_centering', False),
+            'groupeddata_mat': prepared.get('groupeddata_mat', ''),
+            'matched_pair_counts': prepared.get('matched_pair_counts', np.zeros(0, dtype=int)),
+        }
     raise ValueError(f"Unsupported mode: {mode}")
 
 
@@ -642,8 +727,20 @@ def run_decoding_per_category(category_data, shuffle=False, seed=None, n_repeats
     n_categories = len(category_data)
     n_timepoints = len(np.arange(0, category_data[0][0].shape[2], DECODING_STEP))
     scores = np.zeros((n_timepoints, n_categories))
-    for category_index, (samples, labels) in enumerate(category_data):
-        category_scores = run_decoding_over_time_cv(samples, labels, n_repeats=n_repeats, shuffle=shuffle, seed=seed)
+    for category_index, (samples, labels, groups_cat) in enumerate(category_data):
+        if groups_cat is None:
+            category_scores = run_decoding_over_time_cv(samples, labels, n_repeats=n_repeats, shuffle=shuffle, seed=seed)
+        else:
+            category_scores = run_grouped_auc_over_time(
+                samples,
+                labels,
+                groups_cat,
+                n_splits=N_SPLITS,
+                n_repeats=n_repeats,
+                decoding_step=DECODING_STEP,
+                seed=seed if seed is not None else RANDOM_STATE,
+                shuffle=shuffle,
+            )
         scores[:, category_index] = np.mean(category_scores, axis=1)
     return scores
 
@@ -664,6 +761,23 @@ def run_real_decoding(prepared):
         return run_decoding_over_time_task2_gray_combos(prepared['combo_data'], shuffle=False, seed=RANDOM_STATE)
     if mode == 'within_category_color_gray':
         return run_decoding_per_category(prepared['category_data'], shuffle=False, seed=RANDOM_STATE, n_repeats=N_REPEATS_REAL)
+    raise ValueError(f"Unsupported mode: {mode}")
+
+
+def run_real_mean_curve(prepared, seed):
+    mode = prepared['mode']
+    if mode == 'within_cv':
+        scores = run_decoding_over_time_cv(prepared['X'], prepared['y'], n_repeats=N_REPEATS_REAL, shuffle=False, seed=seed)
+        return np.mean(scores, axis=1)
+    if mode == 'pair_holdout_task1':
+        scores = run_decoding_over_time_group_holdout(prepared['X'], prepared['y'], prepared['groups'], shuffle=False, seed=seed)
+        return np.mean(scores, axis=1)
+    if mode == 'cross_combo_task2_gray':
+        scores = run_decoding_over_time_task2_gray_combos(prepared['combo_data'], shuffle=False, seed=seed)
+        return np.mean(scores, axis=1)
+    if mode == 'within_category_color_gray':
+        scores = run_decoding_per_category(prepared['category_data'], shuffle=False, seed=seed, n_repeats=N_REPEATS_REAL)
+        return np.mean(scores, axis=1)
     raise ValueError(f"Unsupported mode: {mode}")
 
 
@@ -689,6 +803,17 @@ def run_permutation_distribution(prepared, n_timepoints):
         return np.full((0, n_timepoints), np.nan)
     perm_results = Parallel(n_jobs=N_JOBS)(delayed(run_perm_mean_curve)(prepared, perm_seed) for perm_seed in range(N_PERMS))
     return np.asarray(perm_results)
+
+
+def run_real_curve_distribution(first_curve, prepared):
+    first_curve = np.asarray(first_curve, dtype=float)
+    if N_REALS <= 1:
+        return first_curve[None, :]
+    extra_results = Parallel(n_jobs=N_JOBS)(
+        delayed(run_real_mean_curve)(prepared, RANDOM_STATE + real_index)
+        for real_index in range(1, N_REALS)
+    )
+    return np.vstack([first_curve[None, :], np.asarray(extra_results, dtype=float)])
 
 
 def cluster_permutation_significance(mean_auc, perm_dist):
@@ -843,7 +968,10 @@ def write_summary_csv(rows, save_path):
 
 def compute_importance(prepared, electrode_records):
     full_score_matrix = run_real_decoding(prepared)
-    full_mean_auc, full_sem_auc = compute_mean_and_sem(full_score_matrix)
+    full_reference_curve = np.mean(full_score_matrix, axis=1)
+    full_auc_runs = run_real_curve_distribution(full_reference_curve, prepared)
+    full_mean_auc = np.mean(full_auc_runs, axis=0)
+    full_sem_auc = np.std(full_auc_runs, axis=0, ddof=0) / np.sqrt(full_auc_runs.shape[0])
     n_timepoints = full_mean_auc.shape[0]
     perm_dist = run_permutation_distribution(prepared, n_timepoints)
     threshold_95, sig_indices = cluster_permutation_significance(full_mean_auc, perm_dist)
@@ -856,17 +984,17 @@ def compute_importance(prepared, electrode_records):
         keep_indices = np.setdiff1d(all_feature_indices, feature_indices, assume_unique=True)
 
         if keep_indices.size == 0:
-            loo_mean_auc = np.full_like(full_mean_auc, 0.5)
+            loo_mean_auc = np.full_like(full_reference_curve, 0.5)
         else:
             loo_prepared = select_prepared_features(prepared, keep_indices)
             loo_scores = run_real_decoding(loo_prepared)
-            loo_mean_auc, _ = compute_mean_and_sem(loo_scores)
+            loo_mean_auc = np.mean(loo_scores, axis=1)
 
         single_prepared = select_prepared_features(prepared, feature_indices)
         single_scores = run_real_decoding(single_prepared)
-        single_mean_auc, _ = compute_mean_and_sem(single_scores)
+        single_mean_auc = np.mean(single_scores, axis=1)
 
-        delta_auc = full_mean_auc - loo_mean_auc
+        delta_auc = full_reference_curve - loo_mean_auc
         peak_delta_index = int(np.argmax(delta_auc))
         peak_single_index = int(np.argmax(single_mean_auc))
         return {
@@ -896,6 +1024,7 @@ def compute_importance(prepared, electrode_records):
     single_matrix = np.stack([row['single_auc'] for row in rows], axis=0)
     return {
         'full_score_matrix': full_score_matrix,
+        'full_auc_runs': full_auc_runs,
         'full_mean_auc': full_mean_auc,
         'full_sem_auc': full_sem_auc,
         'perm_dist': perm_dist,
@@ -941,6 +1070,7 @@ def main():
     validate_config()
     data_bank, times_ms, electrode_records = collect_all_electrode_data(SUBJECT)
     print(f'Collected {len(electrode_records)} unique electrodes for {SUBJECT} | {FEATURE_KIND}')
+    print(f'n_real={N_REALS}, n_repeats_real={N_REPEATS_REAL}, n_repeats_perm={N_REPEATS_PERM}, n_perm={N_PERMS}')
 
     summary_records = []
     for task in TASKS:
@@ -969,6 +1099,7 @@ def main():
         np.savez_compressed(
             mat_path,
             full_score_matrix=results['full_score_matrix'],
+            full_auc_runs=results['full_auc_runs'],
             full_mean_auc=results['full_mean_auc'],
             full_sem_auc=results['full_sem_auc'],
             threshold_95=results['threshold_95'],
@@ -980,6 +1111,16 @@ def main():
             source_rois=np.array([row['source_rois'] for row in results['rows']], dtype=object),
             times_ms=np.asarray(times_ms, dtype=float),
             plot_times_ms=np.asarray(PLOT_TIMES[:results['full_mean_auc'].shape[0]], dtype=float),
+            task_name=np.array(prepared.get('task_name', '')),
+            category_names=np.asarray(prepared.get('category_names', []), dtype=object),
+            use_groupeddata_pairing=np.array(prepared.get('use_groupeddata_pairing', False)),
+            use_groupeddata_pair_centering=np.array(prepared.get('use_groupeddata_pair_centering', False)),
+            groupeddata_mat=np.array(prepared.get('groupeddata_mat', '')),
+            matched_pair_counts=np.asarray(prepared.get('matched_pair_counts', np.zeros(0, dtype=int)), dtype=int),
+            n_real=np.array(N_REALS),
+            n_repeats_real=np.array(N_REPEATS_REAL),
+            n_repeats_perm=np.array(N_REPEATS_PERM),
+            n_perm=np.array(N_PERMS),
             generated_at=np.array(datetime.now().isoformat()),
         )
 

@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>心得 | 总体流程总览</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <strong>总体流程总览</strong>
+            <nav class="nav">
+                <a href="index.html">首页</a>
+                <a href="01_overview.html">总览</a>
+                <a href="02_preprocess_and_features.html">预处理与特征</a>
+                <a href="03_decoding_workflows.html">Decoding 方案</a>
+                <a href="04_pca_and_paired.html">PCA 与配对分析</a>
+                <a href="06_visual_schematics.html">可视化示意</a>
+                <a href="05_code_map.html">代码地图</a>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <span class="eyebrow">01 / Overview</span>
+            <h1>从刺激图片种类到结果目录</h1>
+            <p class="lead">
+                这一页把项目里最核心的问题串起来：刺激是如何定义条件的，条件如何被转成 task 级 epoch，epoch 如何进一步变成 ROI 特征，最后又是如何进入主线 decoding、paired 分析和 HTML 报告的。
+            </p>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">任务入口</p>
+                    <h2>先把刺激与任务结构想清楚</h2>
+                </div>
+                <p>当前扩展分析几乎都以 Task1 为主，因为 Task1 同时具备四类图片和 color-gray 对照，最适合做类别 decoding 与配对比较。</p>
+            </div>
+            <div class="two-col">
+                <article class="card">
+                    <strong>Task1 的核心条件结构</strong>
+                    <p class="muted">默认条件顺序与 paired 分析约定一致：</p>
+                    <div class="chips">
+                        <span class="chip">0/1: face color / gray</span>
+                        <span class="chip">2/3: body color / gray</span>
+                        <span class="chip">4/5: object color / gray</span>
+                        <span class="chip">6/7: scene color / gray</span>
+                    </div>
+                    <p class="muted" style="margin-top:14px;">因此它既能做四分类，也能做每个类别内部的 color-vs-gray 二分类，还能做 image-paired 分析。</p>
+                </article>
+                <article class="card">
+                    <strong>Task2 / Task3 的角色</strong>
+                    <p class="muted">它们主要参与共同通道筛选、跨任务 ROI 特征生成以及 cross-decoding。仓库里真正的配对 color-gray 方案目前集中在 Task1。</p>
+                    <div class="chips">
+                        <span class="chip">共同通道约束</span>
+                        <span class="chip">cross decoding</span>
+                        <span class="chip">批处理流程复用</span>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">主流程图</p>
+                    <h2>从原始事件到结果输出的总路径</h2>
+                </div>
+            </div>
+            <div class="diagram-wrap">
+                <svg class="diagram" viewBox="0 0 1180 520" xmlns="http://www.w3.org/2000/svg" aria-label="刺激到结果的总体流程图">
+                    <defs>
+                        <marker id="arrow-overview" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+                            <path d="M0,0 L12,6 L0,12 z" fill="#1b6a78"/>
+                        </marker>
+                    </defs>
+                    <rect x="26" y="42" width="240" height="120" rx="24" fill="#fff7ef" stroke="#a34331" stroke-width="2.2"/>
+                    <text x="54" y="78" font-size="24" fill="#17242b" font-weight="700">刺激与事件定义</text>
+                    <text x="54" y="112" font-size="17" fill="#5e696f">图片类别、color/gray、task 编码</text>
+                    <text x="54" y="138" font-size="17" fill="#5e696f">event.mat / trigger / EEGLAB .set</text>
+
+                    <rect x="322" y="42" width="238" height="120" rx="24" fill="#f5fbfc" stroke="#1b6a78" stroke-width="2.2"/>
+                    <text x="350" y="78" font-size="23" fill="#17242b" font-weight="700">Sec1_preanalyse.m</text>
+                    <text x="350" y="112" font-size="17" fill="#5e696f">epoch、滤波、基线、坏段剔除</text>
+                    <text x="350" y="138" font-size="17" fill="#5e696f">trial 数统一、保存元数据</text>
+
+                    <rect x="618" y="42" width="242" height="120" rx="24" fill="#fffdf7" stroke="#d89d36" stroke-width="2.2"/>
+                    <text x="646" y="78" font-size="24" fill="#17242b" font-weight="700">processed_data</text>
+                    <text x="646" y="112" font-size="17" fill="#5e696f">task*_ERP_epoched.mat</text>
+                    <text x="646" y="138" font-size="17" fill="#5e696f">task*_TFA_epoched.mat</text>
+
+                    <rect x="908" y="42" width="236" height="120" rx="24" fill="#f9f8ff" stroke="#6f77b3" stroke-width="2.2"/>
+                    <text x="936" y="78" font-size="24" fill="#17242b" font-weight="700">Sec2 ROI 特征</text>
+                    <text x="936" y="112" font-size="17" fill="#5e696f">按 ROI 聚合成 feature/*.mat</text>
+                    <text x="936" y="138" font-size="17" fill="#5e696f">模态按脚本拆分</text>
+
+                    <rect x="94" y="246" width="286" height="180" rx="28" fill="#fffaf4" stroke="#17242b" stroke-width="2"/>
+                    <text x="126" y="286" font-size="24" fill="#17242b" font-weight="700">主线结果树</text>
+                    <text x="126" y="320" font-size="17" fill="#5e696f">result/decoding/...</text>
+                    <text x="126" y="346" font-size="17" fill="#5e696f">result/cross_decoding/...</text>
+                    <text x="126" y="372" font-size="17" fill="#5e696f">result/roi_condition_tfa/...</text>
+
+                    <rect x="446" y="246" width="286" height="180" rx="28" fill="#fffaf4" stroke="#17242b" stroke-width="2"/>
+                    <text x="478" y="286" font-size="24" fill="#17242b" font-weight="700">testcode 扩展分析</text>
+                    <text x="478" y="320" font-size="17" fill="#5e696f">四分类 color-gray 对照</text>
+                    <text x="478" y="346" font-size="17" fill="#5e696f">paired decoding / PCA / cosine</text>
+                    <text x="478" y="372" font-size="17" fill="#5e696f">metric / permutation regime 审计</text>
+
+                    <rect x="798" y="246" width="286" height="180" rx="28" fill="#fffaf4" stroke="#17242b" stroke-width="2"/>
+                    <text x="830" y="286" font-size="24" fill="#17242b" font-weight="700">Sec4 / Sec5 封装</text>
+                    <text x="830" y="320" font-size="16" fill="#5e696f">批处理执行 / runtime config</text>
+                    <text x="830" y="346" font-size="16" fill="#5e696f">重绘、汇总 / Markdown 转 HTML</text>
+                    <text x="830" y="372" font-size="16" fill="#5e696f">面向汇报的结果归档</text>
+
+                    <line x1="266" y1="102" x2="322" y2="102" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-overview)"/>
+                    <line x1="560" y1="102" x2="618" y2="102" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-overview)"/>
+                    <line x1="860" y1="102" x2="908" y2="102" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-overview)"/>
+                    <path d="M1026 162 C1026 198, 1020 218, 942 246" fill="none" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-overview)"/>
+                    <path d="M1026 162 C1026 200, 902 218, 590 246" fill="none" stroke="#a34331" stroke-width="4" marker-end="url(#arrow-overview)"/>
+                    <path d="M1026 162 C1026 202, 602 218, 238 246" fill="none" stroke="#d89d36" stroke-width="4" marker-end="url(#arrow-overview)"/>
+                </svg>
+                <p class="diagram-caption">如果把仓库看成一条生产线，那么 `newanalyse` 负责生产稳定可复用的数据对象，`testcode` 负责针对具体研究问题追加更细的分析镜头。</p>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">双线结构</p>
+                    <h2>正式主线与扩展线的分工</h2>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>区域</th>
+                            <th>主要职责</th>
+                            <th>代表脚本</th>
+                            <th>适合的使用场景</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>newanalyse / Sec1-Sec3</td>
+                            <td>形成主分析数据对象并执行常规 ROI decoding、统计与 cross-decoding</td>
+                            <td><a href="../newanalyse/Sec1_preanalyse.m">Sec1_preanalyse.m</a>、<a href="../newanalyse/Sec3_1_all_roi_result_erp.py">Sec3_1_all_roi_result_erp.py</a>、<a href="../newanalyse/Sec3_7_all_roi_result_cross.py">Sec3_7_all_roi_result_cross.py</a></td>
+                            <td>正式生成结果、可批量复用、适合作为论文主图来源</td>
+                        </tr>
+                        <tr>
+                            <td>newanalyse / Sec4-Sec5</td>
+                            <td>批处理、配置注入、结果重绘和 HTML 汇总</td>
+                            <td><a href="../newanalyse/Sec4_2_batch_run_modalities.py">Sec4_2_batch_run_modalities.py</a>、<a href="../newanalyse/Sec5_2_merge_new_md_to_html.py">Sec5_2_merge_new_md_to_html.py</a></td>
+                            <td>多被试、多模态统一跑批和整理汇总</td>
+                        </tr>
+                        <tr>
+                            <td>testcode</td>
+                            <td>验证新问题、比较新设定、做更细的解释性图形</td>
+                            <td><a href="../testcode/compare_task1_color_gray_fourclass.py">compare_task1_color_gray_fourclass.py</a>、<a href="../testcode/task1_paired_decoding/README.md">task1_paired_decoding/README.md</a></td>
+                            <td>研究设计变化、paired 图像问题、PCA/余弦解释</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">结果目录</p>
+                    <h2>看结果时先认目录，不要先认脚本名</h2>
+                </div>
+            </div>
+            <div class="cards">
+                <article class="card">
+                    <strong>processed_data</strong>
+                    <p class="muted">任务级 epoch 数据与元数据，是所有 ROI 特征的上游来源。与坏段剔除、repeat 重排最相关。</p>
+                </article>
+                <article class="card">
+                    <strong>feature</strong>
+                    <p class="muted">每个 ROI 一个 `.mat` 文件。这里决定 downstream 解码用的到底是 ERP、gamma 还是 gamma multiband。</p>
+                </article>
+                <article class="card">
+                    <strong>result/decoding 与 cross_decoding</strong>
+                    <p class="muted">主线 time-resolved decoding 结果目录。路径规则由 `newanalyse_paths.py` 统一定义。</p>
+                </article>
+                <article class="card">
+                    <strong>result/reports</strong>
+                    <p class="muted">更偏汇总和解释性输出，包括 paired decoding 报告、metric 对照图、perm regime 对照图等。</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="quote">
+                理解这个项目最有效的方式不是“逐个文件读”，而是先分清哪些文件在制造数据对象，哪些文件在消费这些数据对象。制造端是 `Sec1` 和 `Sec2`，消费端是 `Sec3` 与 `testcode`。
+            </div>
+            <div class="page-links">
+                <a href="02_preprocess_and_features.html">下一页：预处理与特征</a>
+                <a class="secondary" href="index.html">回首页</a>
+            </div>
+        </section>
+
+        <footer class="footer">
+            页面聚焦结构总览。下一页开始进入 `Sec1` 与 `Sec2` 的细节，包括 bad epoch、min-trial 截断、ROI many-to-many 映射和各模态特征来源。
+        </footer>
+    </main>
+</body>
+</html>

@@ -19,7 +19,7 @@ function Sec2_1_preprocess_erp()
 
 run_timer = tic;
 
-subject = 'test003';
+subject = 'test001';
 cfg = newanalyse_load_run_config(mfilename, {'matlab_defaults', 'sec2_defaults'});
 if isfield(cfg, 'subject')
     subject = char(string(cfg.subject));

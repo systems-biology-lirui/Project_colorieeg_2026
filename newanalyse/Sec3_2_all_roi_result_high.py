@@ -17,6 +17,13 @@ from joblib import Parallel, delayed
 from scipy.ndimage import label
 
 from runtime_config import load_runtime_config
+from groupeddata_pairing import (
+    center_paired_trials,
+    load_paired_category_trials,
+    resolve_within_category_task,
+    run_grouped_auc_over_time,
+    stack_paired_binary_trials,
+)
 from newanalyse_paths import (
     get_feature_dir,
     get_within_decoding_batch_dir,
@@ -33,6 +40,7 @@ FEATURE_SUBDIR = 'decoding_highgamma_features'
 FEATURE_DIR = str(get_feature_dir(BASE_PATH, FEATURE_SUBDIR, SUBJECT))
 
 N_SPLITS = 5
+N_REALS = 100
 N_REPEATS_REAL = 10
 N_REPEATS_PERM = N_REPEATS_REAL
 N_PERMS = 1000
@@ -51,6 +59,17 @@ PLOT_TIMES = TIMES[::DECODING_STEP]
 BATCH_NAME = 'batch_within_decoding'
 ROI_FILE_PATTERN = 'Color_with*.mat'
 RUN_PERMUTATION_TEST = True
+FEATURE_KIND = 'highgamma'
+FIELD_PREFIX = 'hg'
+USE_GROUPEDDATA_PAIRING = False
+USE_GROUPEDDATA_PAIR_CENTERING = False
+GROUPEDDATA_FILES = {'task1': '', 'task2': '', 'task3': ''}
+DEFAULT_CATEGORY_PAIRS_BY_TASK = {
+    'task1': [(0, 1), (2, 3), (4, 5), (6, 7)],
+}
+DEFAULT_CATEGORY_NAMES_BY_TASK = {
+    'task1': ['face', 'body', 'object', 'scene'],
+}
 
 TASKS = [
     # {
@@ -58,6 +77,7 @@ TASKS = [
     #     'title': 'Task 3 Pure Color Self-Decoding: Condition 1 vs Condition 4',
     #     'description': 'Train and test within Task 3 using condition 1 vs condition 4.',
     #     'mode': 'within_cv',
+        'task_name': 'task1',
     #     'data_key': 'hg_task3',
     #     'class0': [0],
     #     'class1': [3],
@@ -112,6 +132,7 @@ if _RUNTIME_CFG:
     SUBJECT = str(_RUNTIME_CFG.get('subject', SUBJECT))
     BASE_PATH = str(_RUNTIME_CFG.get('base_path', BASE_PATH))
     N_SPLITS = int(_RUNTIME_CFG.get('n_splits', N_SPLITS))
+    N_REALS = int(_RUNTIME_CFG.get('n_reals', N_REALS))
     N_REPEATS_REAL = int(_RUNTIME_CFG.get('n_repeats_real', N_REPEATS_REAL))
     N_REPEATS_PERM = int(_RUNTIME_CFG.get('n_repeats_perm', N_REPEATS_PERM))
     N_PERMS = int(_RUNTIME_CFG.get('n_perms', N_PERMS))
@@ -122,6 +143,10 @@ if _RUNTIME_CFG:
     BATCH_NAME = str(_RUNTIME_CFG.get('batch_name', BATCH_NAME))
     ROI_FILE_PATTERN = str(_RUNTIME_CFG.get('roi_pattern', ROI_FILE_PATTERN))
     RUN_PERMUTATION_TEST = bool(_RUNTIME_CFG.get('run_permutation_test', RUN_PERMUTATION_TEST))
+    USE_GROUPEDDATA_PAIRING = bool(_RUNTIME_CFG.get('use_groupeddata_pairing', USE_GROUPEDDATA_PAIRING))
+    USE_GROUPEDDATA_PAIR_CENTERING = bool(_RUNTIME_CFG.get('use_groupeddata_pair_centering', USE_GROUPEDDATA_PAIR_CENTERING))
+    if 'groupeddata_files' in _RUNTIME_CFG:
+        GROUPEDDATA_FILES = dict(_RUNTIME_CFG['groupeddata_files'])
     if 'tasks' in _RUNTIME_CFG:
         TASKS = _RUNTIME_CFG['tasks']
 
@@ -138,6 +163,19 @@ def get_perm_tag():
     return f'perm{N_PERMS}' if should_run_permutation_test() else 'real_only'
 
 
+def resolve_within_category_spec(task):
+    return resolve_within_category_task(
+        task,
+        field_prefix=FIELD_PREFIX,
+        default_task_name='task1',
+        default_category_pairs=DEFAULT_CATEGORY_PAIRS_BY_TASK,
+        default_category_names=DEFAULT_CATEGORY_NAMES_BY_TASK,
+        use_groupeddata_pairing=USE_GROUPEDDATA_PAIRING,
+        use_groupeddata_pair_centering=USE_GROUPEDDATA_PAIR_CENTERING,
+        groupeddata_files=GROUPEDDATA_FILES,
+    )
+
+
 def main():
     mat_files = sorted(glob.glob(os.path.join(FEATURE_DIR, ROI_FILE_PATTERN)))
     if not mat_files:
@@ -152,6 +190,7 @@ def main():
     logger(f'Start batch decoding for {SUBJECT}')
     logger(f'Feature dir: {FEATURE_DIR}')
     logger(f'ROI count: {len(mat_files)}')
+    logger(f'n_real={N_REALS}, n_repeats_real={N_REPEATS_REAL}, n_repeats_perm={N_REPEATS_PERM}, n_perm={N_PERMS}')
 
     task_outputs = {}
     for task in TASKS:
@@ -201,6 +240,10 @@ def run_task_for_roi(fpath, roi_name, task, save_path, roi_plot_dir, logger):
         X_use = smooth_data_causal(X_raw, TIME_SMOOTH_WIN) if TIME_SMOOTH_WIN > 0 else X_raw
         
         real_auc_matrix = run_decoding_over_time_cv(X_use, y, n_repeats=N_REPEATS_REAL, shuffle=False, seed=RANDOM_STATE)
+        real_auc_runs = run_real_curve_distribution(
+            np.mean(real_auc_matrix, axis=1),
+            lambda real_seed: run_decoding_over_time_cv_mean(X_use, y, N_REPEATS_REAL, False, real_seed),
+        )
         perm_dist = run_permutation_distribution(
             lambda shuffle, seed: run_decoding_over_time_cv_mean(X_use, y, N_REPEATS_PERM, shuffle, seed),
             real_auc_matrix.shape[0],
@@ -211,6 +254,10 @@ def run_task_for_roi(fpath, roi_name, task, save_path, roi_plot_dir, logger):
         X_raw = baseline_zscore(X_raw, baseline_end)
         X_use = smooth_data_causal(X_raw, TIME_SMOOTH_WIN) if TIME_SMOOTH_WIN > 0 else X_raw
         real_auc_matrix = run_decoding_over_time_group_holdout(X_use, y, groups, shuffle=False, seed=RANDOM_STATE)
+        real_auc_runs = run_real_curve_distribution(
+            np.mean(real_auc_matrix, axis=1),
+            lambda real_seed: run_decoding_over_time_group_holdout_mean(X_use, y, groups, False, real_seed),
+        )
         perm_dist = run_permutation_distribution(
             lambda shuffle, seed: run_decoding_over_time_group_holdout_mean(X_use, y, groups, shuffle, seed),
             real_auc_matrix.shape[0],
@@ -218,24 +265,27 @@ def run_task_for_roi(fpath, roi_name, task, save_path, roi_plot_dir, logger):
     elif mode == 'cross_combo_task2_gray':
         combo_data = build_task2_gray_memory_combos(mat)
         real_auc_matrix = run_decoding_over_time_task2_gray_combos(combo_data, shuffle=False, seed=RANDOM_STATE)
+        real_auc_runs = run_real_curve_distribution(
+            np.mean(real_auc_matrix, axis=1),
+            lambda real_seed: run_decoding_over_time_task2_gray_combos_mean(combo_data, False, real_seed),
+        )
         perm_dist = run_permutation_distribution(
             lambda shuffle, seed: run_decoding_over_time_task2_gray_combos_mean(combo_data, shuffle, seed),
             real_auc_matrix.shape[0],
         )
     elif mode == 'within_category_color_gray':
-        CATEGORY_PAIRS = [
-            (0, 1), (2, 3), (4, 5), (6, 7),
-        ]
-        CATEGORY_NAMES = ['face', 'body', 'object', 'scene']
-        
-        # 获取真实结果以及各类别平均/单独的置换分布
-        real_auc_matrix, real_sem_matrix, perm_dist_mean, perm_dist_all = run_decoding_per_category(
-            mat, CATEGORY_PAIRS, shuffle=False, seed=RANDOM_STATE
+        within_category_spec = resolve_within_category_spec(task)
+        real_auc_matrix, real_sem_matrix, real_auc_runs, perm_dist_mean, perm_dist_all, matched_pair_counts = run_decoding_per_category(
+            mat,
+            within_category_spec,
+            shuffle=False,
+            seed=RANDOM_STATE,
         )
-        
-        # --- 第一部分：处理跨类别平均 (Mean) ---
-        mean_auc = np.mean(real_auc_matrix, axis=1)
-        sem_auc  = np.std(real_auc_matrix,  axis=1, ddof=0) / np.sqrt(real_auc_matrix.shape[1])
+        category_names = within_category_spec['category_names']
+        real_auc_mean_runs = np.mean(real_auc_runs, axis=2)
+
+        mean_auc = np.mean(real_auc_mean_runs, axis=0)
+        sem_auc = np.std(real_auc_mean_runs, axis=0, ddof=0) / np.sqrt(real_auc_mean_runs.shape[0])
         threshold_95, sig_indices = cluster_permutation_significance(mean_auc, perm_dist_mean)
         latencies = compute_latency_points(mean_auc, sig_indices)
 
@@ -245,15 +295,25 @@ def run_task_for_roi(fpath, roi_name, task, save_path, roi_plot_dir, logger):
             sem_auc=sem_auc,
             threshold_95=threshold_95,
             sig_indices=sig_indices,
-            real_auc_matrix=real_auc_matrix,  # 保存各类别真实 AUC 以备后用
+            real_auc_matrix=real_auc_matrix,
+            real_auc_runs=real_auc_runs,
             perm_dist_mean=perm_dist_mean,
-            perm_dist_all=perm_dist_all,      # 把完整的单类置换也存入
+            perm_dist_all=perm_dist_all,
             latency_earliest=latencies['earliest'],
             latency_half_height=latencies['half_height'],
             latency_peak=latencies['peak'],
             task_id=np.array(task['id']),
             task_title=np.array(task['title']),
-            category_names=np.array(CATEGORY_NAMES)
+            task_name=np.array(within_category_spec['task_name']),
+            category_names=np.array(category_names),
+            n_real=np.array(N_REALS),
+            n_repeats_real=np.array(N_REPEATS_REAL),
+            n_repeats_perm=np.array(N_REPEATS_PERM),
+            n_perm=np.array(N_PERMS),
+            use_groupeddata_pairing=np.array(within_category_spec['use_groupeddata_pairing']),
+            use_groupeddata_pair_centering=np.array(within_category_spec['use_groupeddata_pair_centering']),
+            groupeddata_mat=np.array(str(within_category_spec['groupeddata_mat'] or '')),
+            matched_pair_counts=np.asarray(matched_pair_counts, dtype=int),
         )
         
         plot_single_roi_result(
@@ -266,17 +326,14 @@ def run_task_for_roi(fpath, roi_name, task, save_path, roi_plot_dir, logger):
             save_path=os.path.join(roi_plot_dir, f'{roi_name}_mean_curve.png')
         )
 
-        # --- 第二部分：处理各个单独类别 (Per Category) ---
-        for i, cat_name in enumerate(CATEGORY_NAMES):
+        for i, cat_name in enumerate(category_names):
             cat_auc = real_auc_matrix[:, i]
             cat_sem = real_sem_matrix[:, i]
             cat_perm_dist = perm_dist_all[:, :, i]
             
-            # 单独计算显著性
             cat_threshold_95, cat_sig_indices = cluster_permutation_significance(cat_auc, cat_perm_dist)
             cat_latencies = compute_latency_points(cat_auc, cat_sig_indices)
             
-            # 为该类别生成专属的保存路径 (例如: test001_face_results.npz)
             cat_save_path = save_path.replace('_results.npz', f'_{cat_name}_results.npz')
             
             np.savez(
@@ -285,15 +342,25 @@ def run_task_for_roi(fpath, roi_name, task, save_path, roi_plot_dir, logger):
                 sem_auc=cat_sem,
                 threshold_95=cat_threshold_95,
                 sig_indices=cat_sig_indices,
+                real_auc_runs=real_auc_runs[:, :, i],
                 perm_dist=cat_perm_dist,
                 latency_earliest=cat_latencies['earliest'],
                 latency_half_height=cat_latencies['half_height'],
                 latency_peak=cat_latencies['peak'],
+                task_name=np.array(within_category_spec['task_name']),
+                category_name=np.array(cat_name),
+                n_real=np.array(N_REALS),
+                n_repeats_real=np.array(N_REPEATS_REAL),
+                n_repeats_perm=np.array(N_REPEATS_PERM),
+                n_perm=np.array(N_PERMS),
+                use_groupeddata_pairing=np.array(within_category_spec['use_groupeddata_pairing']),
+                use_groupeddata_pair_centering=np.array(within_category_spec['use_groupeddata_pair_centering']),
+                groupeddata_mat=np.array(str(within_category_spec['groupeddata_mat'] or '')),
+                matched_pair_count=np.array(matched_pair_counts[i]),
                 task_id=np.array(f"{task['id']}_{cat_name}"),
                 task_title=np.array(f"{task['title']} - {cat_name}")
             )
             
-            # 绘制单个类别的曲线图
             plot_single_roi_result(
                 roi_name=f"{roi_name} ({cat_name})",
                 mean_auc=cat_auc,
@@ -309,8 +376,8 @@ def run_task_for_roi(fpath, roi_name, task, save_path, roi_plot_dir, logger):
     else:
         raise ValueError(f'Unsupported mode: {mode}')
 
-    mean_auc = np.mean(real_auc_matrix, axis=1)
-    sem_auc = np.std(real_auc_matrix, axis=1, ddof=0) / np.sqrt(real_auc_matrix.shape[1])
+    mean_auc = np.mean(real_auc_runs, axis=0)
+    sem_auc = np.std(real_auc_runs, axis=0, ddof=0) / np.sqrt(real_auc_runs.shape[0])
     threshold_95, sig_indices = cluster_permutation_significance(mean_auc, perm_dist)
     latencies = compute_latency_points(mean_auc, sig_indices)
 
@@ -321,12 +388,17 @@ def run_task_for_roi(fpath, roi_name, task, save_path, roi_plot_dir, logger):
         threshold_95=threshold_95,
         sig_indices=sig_indices,
         real_auc_matrix=real_auc_matrix,
+        real_auc_runs=real_auc_runs,
         perm_dist=perm_dist,
         latency_earliest=latencies['earliest'],
         latency_half_height=latencies['half_height'],
         latency_peak=latencies['peak'],
         task_id=np.array(task['id']),
-        task_title=np.array(task['title'])
+        task_title=np.array(task['title']),
+        n_real=np.array(N_REALS),
+        n_repeats_real=np.array(N_REPEATS_REAL),
+        n_repeats_perm=np.array(N_REPEATS_PERM),
+        n_perm=np.array(N_PERMS),
     )
     plot_single_roi_result(
         roi_name=roi_name,
@@ -422,6 +494,16 @@ def run_permutation_distribution(run_mean_curve_fn, n_timepoints):
         return np.full((0, n_timepoints), np.nan)
     perm_results = Parallel(n_jobs=N_JOBS)(delayed(run_mean_curve_fn)(True, i) for i in range(N_PERMS))
     return np.array(perm_results)
+
+
+def run_real_curve_distribution(first_curve, run_mean_curve_fn):
+    first_curve = np.asarray(first_curve, dtype=float)
+    if N_REALS <= 1:
+        return first_curve[None, :]
+    extra_results = Parallel(n_jobs=N_JOBS)(
+        delayed(run_mean_curve_fn)(RANDOM_STATE + i) for i in range(1, N_REALS)
+    )
+    return np.vstack([first_curve[None, :], np.asarray(extra_results, dtype=float)])
 
 
 def run_decoding_over_time_cv(X, y, n_repeats=1, shuffle=False, seed=None):
@@ -763,67 +845,128 @@ def baseline_zscore(X, baseline_end_idx):
     sd = baseline.std(axis=2, keepdims=True) + 1e-8  # 避免除以0
     return (X - mu) / sd
 
-def run_decoding_per_category(mat, category_pairs, shuffle=False, seed=None):
-    """
-    对每个类别分别做彩色vs灰色解码，返回跨类别平均和各个类别的AUC及置换分布。
-    """
-    if 'hg_task1' not in mat:
-        raise ValueError('Missing matrix: hg_task1')
-    data = mat['hg_task1']
+def run_decoding_per_category(mat, within_category_spec, shuffle=False, seed=None):
+    data_key = within_category_spec['data_key']
+    if data_key not in mat:
+        raise ValueError(f'Missing matrix: {data_key}')
+    data = np.asarray(mat[data_key], dtype=float)
+    category_pairs = within_category_spec['category_pairs']
+    category_names = within_category_spec['category_names']
+    use_groupeddata_pairing = within_category_spec['use_groupeddata_pairing']
+    use_groupeddata_pair_centering = within_category_spec['use_groupeddata_pair_centering']
 
-    # 对每个类别提取数据并做基线校正
     baseline_end = np.searchsorted(TIMES, 0)
     category_data = []
-    for color_idx, gray_idx in category_pairs:
-        X_color = data[color_idx, :, :, :]   # (n_trials, n_ch, n_time)
-        X_gray  = data[gray_idx,  :, :, :]
-        X_cat   = np.concatenate([X_color, X_gray], axis=0)
-        y_cat   = np.concatenate([
-            np.zeros(X_color.shape[0]),
-            np.ones(X_gray.shape[0])
-        ])
-        # 基线校正
-        X_cat = baseline_zscore(X_cat, baseline_end)
-        # 平滑
-        if TIME_SMOOTH_WIN > 0:
-            X_cat = smooth_data_causal(X_cat, TIME_SMOOTH_WIN)
-        category_data.append((X_cat, y_cat))
+    matched_pair_counts = []
+
+    if use_groupeddata_pairing:
+        paired_categories = load_paired_category_trials(
+            BASE_PATH,
+            SUBJECT,
+            FEATURE_KIND,
+            within_category_spec['task_name'],
+            within_category_spec['groupeddata_mat'],
+            data,
+            category_pairs,
+            category_names,
+        )
+        for paired_category in paired_categories:
+            pair_count = paired_category.color.shape[0]
+            samples = np.concatenate([paired_category.color, paired_category.gray], axis=0)
+            samples = baseline_zscore(samples, baseline_end)
+            if TIME_SMOOTH_WIN > 0:
+                samples = smooth_data_causal(samples, TIME_SMOOTH_WIN)
+            color_samples = samples[:pair_count]
+            gray_samples = samples[pair_count:]
+            if use_groupeddata_pair_centering:
+                color_samples, gray_samples = center_paired_trials(color_samples, gray_samples)
+            samples, labels, groups = stack_paired_binary_trials(
+                color_samples,
+                gray_samples,
+                paired_category.pair_ids,
+            )
+            category_data.append((samples, labels, groups))
+            matched_pair_counts.append(paired_category.matched_count)
+    else:
+        for color_idx, gray_idx in category_pairs:
+            X_color = data[color_idx, :, :, :]
+            X_gray = data[gray_idx, :, :, :]
+            X_cat = np.concatenate([X_color, X_gray], axis=0)
+            y_cat = np.concatenate([
+                np.zeros(X_color.shape[0]),
+                np.ones(X_gray.shape[0])
+            ])
+            X_cat = baseline_zscore(X_cat, baseline_end)
+            if TIME_SMOOTH_WIN > 0:
+                X_cat = smooth_data_causal(X_cat, TIME_SMOOTH_WIN)
+            category_data.append((X_cat, y_cat, None))
+            matched_pair_counts.append(int(min(X_color.shape[0], X_gray.shape[0])))
 
     n_categories = len(category_data)
     n_time_indices = len(np.arange(0, category_data[0][0].shape[2], DECODING_STEP))
-    real_auc_matrix = np.zeros((n_time_indices, n_categories))
-    real_sem_matrix = np.zeros((n_time_indices, n_categories))
 
-    # 真实解码
-    for ci, (X_cat, y_cat) in enumerate(category_data):
-        scores = run_decoding_over_time_cv(
-            X_cat, y_cat,
-            n_repeats=N_REPEATS_REAL,
-            shuffle=False,
-            seed=RANDOM_STATE
+    def one_real(real_seed):
+        real_curves = []
+        for X_cat, y_cat, groups_cat in category_data:
+            if groups_cat is None:
+                scores = run_decoding_over_time_cv(
+                    X_cat,
+                    y_cat,
+                    n_repeats=N_REPEATS_REAL,
+                    shuffle=False,
+                    seed=real_seed,
+                )
+            else:
+                scores = run_grouped_auc_over_time(
+                    X_cat,
+                    y_cat,
+                    groups_cat,
+                    n_splits=N_SPLITS,
+                    n_repeats=N_REPEATS_REAL,
+                    decoding_step=DECODING_STEP,
+                    seed=real_seed,
+                    shuffle=False,
+                )
+            real_curves.append(np.mean(scores, axis=1))
+        return np.stack(real_curves, axis=1)
+
+    real_auc_runs = np.array(
+        Parallel(n_jobs=N_JOBS)(
+            delayed(one_real)(RANDOM_STATE + i) for i in range(N_REALS)
         )
-        real_auc_matrix[:, ci] = np.mean(scores, axis=1)
-        real_sem_matrix[:, ci] = np.std(scores, axis=1, ddof=0) / np.sqrt(scores.shape[1])
+    )
+    real_auc_matrix = np.mean(real_auc_runs, axis=0)
+    real_sem_matrix = np.std(real_auc_runs, axis=0, ddof=0) / np.sqrt(real_auc_runs.shape[0])
 
-    # 置换分布
     def one_perm(perm_seed):
         perm_aucs = []
-        for X_cat, y_cat in category_data:
-            scores = run_decoding_over_time_cv(
-                X_cat, y_cat,
-                n_repeats=N_REPEATS_PERM,
-                shuffle=True,
-                seed=perm_seed
-            )
+        for X_cat, y_cat, groups_cat in category_data:
+            if groups_cat is None:
+                scores = run_decoding_over_time_cv(
+                    X_cat,
+                    y_cat,
+                    n_repeats=N_REPEATS_PERM,
+                    shuffle=True,
+                    seed=perm_seed,
+                )
+            else:
+                scores = run_grouped_auc_over_time(
+                    X_cat,
+                    y_cat,
+                    groups_cat,
+                    n_splits=N_SPLITS,
+                    n_repeats=N_REPEATS_PERM,
+                    decoding_step=DECODING_STEP,
+                    seed=perm_seed,
+                    shuffle=True,
+                )
             perm_aucs.append(np.mean(scores, axis=1))
-        # 这里不要求均值，用 stack 保留每个类别的置换分布
-        return np.stack(perm_aucs, axis=1)  # 形状: (n_timepoints, n_categories)
+        return np.stack(perm_aucs, axis=1)
 
-    # perm_dist_all 形状: (N_PERMS, n_timepoints, n_categories)
     if not should_run_permutation_test():
         perm_dist_mean = np.full((0, n_time_indices), np.nan)
         perm_dist_all = np.full((0, n_time_indices, n_categories), np.nan)
-        return real_auc_matrix, real_sem_matrix, perm_dist_mean, perm_dist_all
+        return real_auc_matrix, real_sem_matrix, real_auc_runs, perm_dist_mean, perm_dist_all, matched_pair_counts
 
     perm_dist_all = np.array(
         Parallel(n_jobs=N_JOBS)(
@@ -831,10 +974,9 @@ def run_decoding_per_category(mat, category_pairs, shuffle=False, seed=None):
         )
     )
 
-    # 计算跨类别平均的 null distribution (供平均曲线使用)
-    perm_dist_mean = np.mean(perm_dist_all, axis=2)  # (N_PERMS, n_timepoints)
+    perm_dist_mean = np.mean(perm_dist_all, axis=2)
 
-    return real_auc_matrix, real_sem_matrix, perm_dist_mean, perm_dist_all
+    return real_auc_matrix, real_sem_matrix, real_auc_runs, perm_dist_mean, perm_dist_all, matched_pair_counts
 
 if __name__ == '__main__':
     _script_start_time = time.time()

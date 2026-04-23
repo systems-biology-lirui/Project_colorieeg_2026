@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>心得 | 可视化示意图谱</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <strong>可视化示意图谱</strong>
+            <nav class="nav">
+                <a href="index.html">首页</a>
+                <a href="01_overview.html">总览</a>
+                <a href="02_preprocess_and_features.html">预处理与特征</a>
+                <a href="03_decoding_workflows.html">Decoding 方案</a>
+                <a href="04_pca_and_paired.html">PCA 与配对分析</a>
+                <a href="06_visual_schematics.html">可视化示意</a>
+                <a href="05_code_map.html">代码地图</a>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <span class="eyebrow">06 / Visual Schematics</span>
+            <h1>把配对 decoding、PCA 与神经轨迹直接画出来</h1>
+            <p class="lead">
+                这一页不再强调代码结构，而是把分析方案本身做成直观的示意图。你可以把它当成讲解页、组会页或方法说明页，专门用来解释 paired color-gray 分析是如何组织数据、如何分类、如何投影以及如何形成时间轨迹的。
+            </p>
+            <div class="page-links">
+                <a href="#pairing">看配对重排</a>
+                <a href="#paired-decoding">看三种 paired decoding</a>
+                <a href="#pca-trajectory">看 PCA 与轨迹</a>
+            </div>
+        </section>
+
+        <section id="pairing" class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">Pairing</p>
+                    <h2>配对不是直接按顺序拿 color 和 gray，而是先对齐 repeat 轴</h2>
+                </div>
+                <p>这是 paired 分析最关键的一步。因为 preprocessing 之后保存下来的 trial 次序，已经不一定等于原始收集顺序。</p>
+            </div>
+            <div class="diagram-wrap">
+                <svg class="diagram" viewBox="0 0 1180 560" xmlns="http://www.w3.org/2000/svg" aria-label="Pairing schematic">
+                    <defs>
+                        <marker id="arrow-vis-1" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+                            <path d="M0,0 L12,6 L0,12 z" fill="#1b6a78"/>
+                        </marker>
+                    </defs>
+                    <rect x="34" y="44" width="300" height="170" rx="26" fill="#fff7ef" stroke="#a34331" stroke-width="2.2"/>
+                    <text x="62" y="82" font-size="24" fill="#17242b" font-weight="700">原始 groupedData</text>
+                    <text x="62" y="114" font-size="17" fill="#5e696f">类别行 × color/gray 列</text>
+                    <text x="62" y="140" font-size="17" fill="#5e696f">每个位置记录图片 pair id</text>
+                    <g font-size="18" font-weight="700">
+                        <rect x="62" y="170" width="96" height="30" rx="10" fill="#d64f45" opacity="0.18"/>
+                        <text x="76" y="192" fill="#17242b">12 18 31</text>
+                        <rect x="176" y="170" width="96" height="30" rx="10" fill="#4c78a8" opacity="0.18"/>
+                        <text x="190" y="192" fill="#17242b">12 18 31</text>
+                    </g>
+
+                    <rect x="430" y="44" width="318" height="170" rx="26" fill="#f5fbfc" stroke="#1b6a78" stroke-width="2.2"/>
+                    <text x="458" y="82" font-size="24" fill="#17242b" font-weight="700">读取 Sec1 元数据</text>
+                    <text x="458" y="114" font-size="16" fill="#5e696f">bad_epoch_indices</text>
+                    <text x="458" y="140" font-size="16" fill="#5e696f">condition_original_repeat_index</text>
+                    <text x="458" y="166" font-size="16" fill="#5e696f">condition_global_epoch_index</text>
+
+                    <rect x="844" y="44" width="302" height="170" rx="26" fill="#fffdf7" stroke="#d89d36" stroke-width="2.2"/>
+                    <text x="872" y="82" font-size="24" fill="#17242b" font-weight="700">重排后的保存轴</text>
+                    <text x="872" y="114" font-size="16" fill="#5e696f">只保留实际 surviving trials</text>
+                    <text x="872" y="140" font-size="16" fill="#5e696f">pair id 与 ROI tensor repeat 对齐</text>
+                    <g font-size="18" font-weight="700">
+                        <rect x="872" y="170" width="84" height="30" rx="10" fill="#d64f45" opacity="0.18"/>
+                        <text x="886" y="192" fill="#17242b">12 31</text>
+                        <rect x="972" y="170" width="84" height="30" rx="10" fill="#4c78a8" opacity="0.18"/>
+                        <text x="986" y="192" fill="#17242b">12 31</text>
+                    </g>
+
+                    <rect x="166" y="314" width="336" height="178" rx="30" fill="#fffaf4" stroke="#17242b" stroke-width="2"/>
+                    <text x="196" y="352" font-size="24" fill="#17242b" font-weight="700">颜色 trial 矩阵</text>
+                    <text x="196" y="384" font-size="17" fill="#5e696f">pair 12 → x_color[0]</text>
+                    <text x="196" y="410" font-size="17" fill="#5e696f">pair 31 → x_color[1]</text>
+                    <text x="196" y="436" font-size="16" fill="#5e696f">每行是 Ch/Feat × Time</text>
+                    <text x="196" y="458" font-size="16" fill="#5e696f">展开后的单一样本</text>
+
+                    <rect x="678" y="314" width="336" height="178" rx="30" fill="#fffaf4" stroke="#17242b" stroke-width="2"/>
+                    <text x="708" y="352" font-size="24" fill="#17242b" font-weight="700">灰度 trial 矩阵</text>
+                    <text x="708" y="384" font-size="17" fill="#5e696f">pair 12 → x_gray[0]</text>
+                    <text x="708" y="410" font-size="17" fill="#5e696f">pair 31 → x_gray[1]</text>
+                    <text x="708" y="436" font-size="16" fill="#5e696f">按同样顺序与 color</text>
+                    <text x="708" y="458" font-size="16" fill="#5e696f">一一对应</text>
+
+                    <line x1="334" y1="130" x2="430" y2="130" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-vis-1)"/>
+                    <line x1="748" y1="130" x2="844" y2="130" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-vis-1)"/>
+                    <path d="M956 214 C956 254, 878 276, 846 314" fill="none" stroke="#a34331" stroke-width="4" marker-end="url(#arrow-vis-1)"/>
+                    <path d="M920 214 C920 254, 422 276, 396 314" fill="none" stroke="#d89d36" stroke-width="4" marker-end="url(#arrow-vis-1)"/>
+                </svg>
+                <p class="diagram-caption">这一步解决的是“同一张图的 color 和 gray 是否真的在同一行上”这个问题。没有这一步，paired decoding 的前提就不成立。</p>
+            </div>
+        </section>
+
+        <section id="paired-decoding" class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">Paired Decoding</p>
+                    <h2>三种配对 decoding 方案的视觉差别</h2>
+                </div>
+                <p>这三种方案不是参数小改，而是在问三个不同层次的问题：原始可分吗，去掉图像共性后可分吗，差异向量本身可分吗。</p>
+            </div>
+            <div class="visual-grid">
+                <article class="visual-panel">
+                    <h3>1. grouped CV on raw pairs</h3>
+                    <p class="muted">同一 pair 进入同一折，防止同图样本被拆开造成信息泄漏。</p>
+                    <svg class="mini-diagram" viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" aria-label="grouped cv raw pair">
+                        <rect x="18" y="24" width="108" height="44" rx="14" fill="#d64f45" opacity="0.22"/>
+                        <text x="36" y="52" font-size="15" fill="#17242b">pair 12 color</text>
+                        <rect x="18" y="84" width="108" height="44" rx="14" fill="#4c78a8" opacity="0.22"/>
+                        <text x="38" y="112" font-size="15" fill="#17242b">pair 12 gray</text>
+                        <rect x="190" y="44" width="98" height="66" rx="16" fill="#eff7f8" stroke="#1b6a78" stroke-width="2"/>
+                        <text x="214" y="74" font-size="16" fill="#17242b">Fold A</text>
+                        <text x="202" y="100" font-size="14" fill="#5e696f">整对进入同折</text>
+                        <path d="M128 46 C150 46, 162 52, 190 64" fill="none" stroke="#1b6a78" stroke-width="3"/>
+                        <path d="M128 106 C152 106, 166 102, 190 88" fill="none" stroke="#1b6a78" stroke-width="3"/>
+                    </svg>
+                </article>
+                <article class="visual-panel">
+                    <h3>2. within-pair centered</h3>
+                    <p class="muted">先算 pair mean，再看 color 和 gray 相对这个均值的偏移方向。</p>
+                    <svg class="mini-diagram" viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" aria-label="centered pair">
+                        <circle cx="86" cy="92" r="12" fill="#d64f45"/>
+                        <circle cx="134" cy="92" r="12" fill="#4c78a8"/>
+                        <circle cx="110" cy="92" r="7" fill="#17242b"/>
+                        <line x1="110" y1="92" x2="86" y2="92" stroke="#d64f45" stroke-width="4"/>
+                        <line x1="110" y1="92" x2="134" y2="92" stroke="#4c78a8" stroke-width="4"/>
+                        <text x="56" y="132" font-size="13" fill="#5e696f">color - mean</text>
+                        <text x="120" y="132" font-size="13" fill="#5e696f">gray - mean</text>
+                        <rect x="188" y="48" width="96" height="84" rx="16" fill="#fff8f0" stroke="#a34331" stroke-width="2"/>
+                        <text x="206" y="82" font-size="15" fill="#17242b">去掉图像</text>
+                        <text x="204" y="104" font-size="15" fill="#17242b">共享部分</text>
+                    </svg>
+                </article>
+                <article class="visual-panel">
+                    <h3>3. signed pair difference</h3>
+                    <p class="muted">直接把一对样本压缩成差异向量，再用正负两个方向构成分类任务。</p>
+                    <svg class="mini-diagram" viewBox="0 0 320 180" xmlns="http://www.w3.org/2000/svg" aria-label="difference pair">
+                        <line x1="62" y1="126" x2="62" y2="44" stroke="#c8ccd0" stroke-width="2"/>
+                        <line x1="38" y1="102" x2="154" y2="102" stroke="#c8ccd0" stroke-width="2"/>
+                        <path d="M62 102 L128 64" stroke="#d64f45" stroke-width="4" fill="none"/>
+                        <path d="M62 102 L92 134" stroke="#4c78a8" stroke-width="4" fill="none"/>
+                        <text x="134" y="66" font-size="15" fill="#17242b">+(color-gray)</text>
+                        <text x="98" y="144" font-size="15" fill="#17242b">-(color-gray)</text>
+                        <circle cx="62" cy="102" r="7" fill="#17242b"/>
+                    </svg>
+                </article>
+            </div>
+            <div class="caption-grid">
+                <div class="caption-box">
+                    <strong>raw grouped CV</strong>
+                    <p class="muted">最接近原始数据组织，解释为“同一张图不同颜色能否被识别”。</p>
+                </div>
+                <div class="caption-box">
+                    <strong>centered</strong>
+                    <p class="muted">强调颜色引起的残差结构，适合回答“除去图像主体后还剩什么”。</p>
+                </div>
+                <div class="caption-box">
+                    <strong>difference</strong>
+                    <p class="muted">最直接追踪颜色效应向量，但对 pair 错配和噪声也最敏感。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="pca-trajectory" class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">PCA & Trajectory</p>
+                    <h2>PCA 投影和神经轨迹怎么从信号里长出来</h2>
+                </div>
+                <p>PCA 页最常见的误解是把它看成“只是降维”。在这个项目里，它更像是一种把时间和条件结构翻译成几何图形的手段。</p>
+            </div>
+            <div class="visual-grid">
+                <article class="visual-panel">
+                    <h3>Pairwise PCA scatter</h3>
+                    <p class="muted">把选定时间窗里的样本投影到 PC1/PC2，看 pair 连线、类别簇和颜色方向。</p>
+                    <svg class="mini-diagram" viewBox="0 0 320 210" xmlns="http://www.w3.org/2000/svg" aria-label="PCA scatter">
+                        <line x1="44" y1="168" x2="288" y2="168" stroke="#c8ccd0" stroke-width="2"/>
+                        <line x1="72" y1="188" x2="72" y2="32" stroke="#c8ccd0" stroke-width="2"/>
+                        <text x="250" y="194" font-size="16" fill="#5e696f">PC1</text>
+                        <text x="38" y="42" font-size="16" fill="#5e696f">PC2</text>
+                        <line x1="102" y1="132" x2="126" y2="118" stroke="#cfc7c1" stroke-width="2"/>
+                        <line x1="166" y1="118" x2="184" y2="140" stroke="#cfc7c1" stroke-width="2"/>
+                        <circle cx="102" cy="132" r="9" fill="#d64f45"/>
+                        <circle cx="126" cy="118" r="9" fill="#4c78a8" fill-opacity="0.18" stroke="#4c78a8" stroke-width="3"/>
+                        <circle cx="166" cy="118" r="9" fill="#d64f45"/>
+                        <circle cx="184" cy="140" r="9" fill="#4c78a8" fill-opacity="0.18" stroke="#4c78a8" stroke-width="3"/>
+                        <text x="182" y="56" font-size="13" fill="#17242b">每条灰线 = 一对图像</text>
+                    </svg>
+                </article>
+                <article class="visual-panel">
+                    <h3>2D neural trajectory</h3>
+                    <p class="muted">对条件均值信号逐时间点做 PCA，观察颜色版本的状态轨迹是否分叉或重合。</p>
+                    <svg class="mini-diagram" viewBox="0 0 320 210" xmlns="http://www.w3.org/2000/svg" aria-label="2D trajectory">
+                        <line x1="44" y1="170" x2="286" y2="170" stroke="#c8ccd0" stroke-width="2"/>
+                        <line x1="70" y1="188" x2="70" y2="34" stroke="#c8ccd0" stroke-width="2"/>
+                        <path d="M92 144 C120 120, 150 112, 180 86 S232 58, 258 70" fill="none" stroke="#d64f45" stroke-width="4"/>
+                        <path d="M90 150 C118 136, 144 132, 178 118 S226 112, 256 126" fill="none" stroke="#4c78a8" stroke-width="4"/>
+                        <circle cx="92" cy="144" r="6" fill="#d64f45"/>
+                        <circle cx="258" cy="70" r="6" fill="#d64f45"/>
+                        <circle cx="90" cy="150" r="6" fill="#4c78a8"/>
+                        <circle cx="256" cy="126" r="6" fill="#4c78a8"/>
+                        <text x="186" y="50" font-size="13" fill="#17242b">轨迹分叉 = 表征方向改变</text>
+                    </svg>
+                </article>
+                <article class="visual-panel">
+                    <h3>3D trajectory concept</h3>
+                    <p class="muted">加入 PC3 以后，能分辨 2D 平面里重叠但实际上沿第三轴分离的状态路径。</p>
+                    <svg class="mini-diagram" viewBox="0 0 320 210" xmlns="http://www.w3.org/2000/svg" aria-label="3D trajectory concept">
+                        <line x1="70" y1="164" x2="242" y2="164" stroke="#c8ccd0" stroke-width="2"/>
+                        <line x1="70" y1="164" x2="70" y2="52" stroke="#c8ccd0" stroke-width="2"/>
+                        <line x1="70" y1="164" x2="122" y2="118" stroke="#c8ccd0" stroke-width="2"/>
+                        <path d="M90 150 C126 122, 150 112, 194 88 S240 70, 262 90" fill="none" stroke="#d64f45" stroke-width="4"/>
+                        <path d="M88 156 C120 148, 148 140, 182 138 S232 126, 252 116" fill="none" stroke="#4c78a8" stroke-width="4"/>
+                        <text x="242" y="182" font-size="15" fill="#5e696f">PC1</text>
+                        <text x="44" y="58" font-size="15" fill="#5e696f">PC2</text>
+                        <text x="126" y="112" font-size="15" fill="#5e696f">PC3</text>
+                    </svg>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">Similarity</p>
+                    <h2>余弦相似度曲线如何补充 PCA 和 decoding</h2>
+                </div>
+                <p>decoding 看的是能否分开，PCA 看的是空间几何，cosine similarity 看的是 color 与 gray 的方向一致性是否随时间改变。</p>
+            </div>
+            <div class="diagram-wrap">
+                <svg class="diagram" viewBox="0 0 1180 360" xmlns="http://www.w3.org/2000/svg" aria-label="Cosine similarity schematic">
+                    <rect x="52" y="48" width="314" height="230" rx="28" fill="#fff7ef" stroke="#a34331" stroke-width="2"/>
+                    <text x="82" y="88" font-size="24" fill="#17242b" font-weight="700">每个时间点</text>
+                    <text x="82" y="120" font-size="17" fill="#5e696f">取 color mean 向量 v(t)</text>
+                    <text x="82" y="146" font-size="17" fill="#5e696f">取 gray mean 向量 g(t)</text>
+                    <text x="82" y="172" font-size="17" fill="#5e696f">算 cos(v(t), g(t))</text>
+                    <text x="82" y="198" font-size="17" fill="#5e696f">得到一条随时间变化的相似度曲线</text>
+
+                    <rect x="432" y="48" width="318" height="230" rx="28" fill="#f5fbfc" stroke="#1b6a78" stroke-width="2"/>
+                    <text x="462" y="88" font-size="24" fill="#17242b" font-weight="700">raw similarity</text>
+                    <text x="462" y="120" font-size="17" fill="#5e696f">如果曲线一直很高，说明 color 与 gray</text>
+                    <text x="462" y="146" font-size="17" fill="#5e696f">在总体表征方向上仍然接近</text>
+                    <text x="462" y="172" font-size="17" fill="#5e696f">若中途下降，说明开始分叉</text>
+
+                    <rect x="816" y="48" width="312" height="230" rx="28" fill="#fffdf7" stroke="#d89d36" stroke-width="2"/>
+                    <text x="846" y="88" font-size="24" fill="#17242b" font-weight="700">centered similarity</text>
+                    <text x="846" y="120" font-size="17" fill="#5e696f">如果去掉 pair mean 后仍明显下降</text>
+                    <text x="846" y="146" font-size="17" fill="#5e696f">说明颜色差异不只是图像内容差异</text>
+                    <text x="846" y="172" font-size="17" fill="#5e696f">而是在残差方向上也发生改变</text>
+
+                    <polyline points="116,246 166,210 214,198 262,138 314,116" fill="none" stroke="#d64f45" stroke-width="4"/>
+                    <polyline points="498,246 548,226 596,222 644,208 694,144" fill="none" stroke="#4c78a8" stroke-width="4"/>
+                    <polyline points="886,246 936,230 986,212 1034,176 1082,126" fill="none" stroke="#a34331" stroke-width="4" stroke-dasharray="10 6"/>
+                </svg>
+                <p class="diagram-caption">因此，一套完整的解释通常是三层并行：paired decoding 告诉你“能不能分”，PCA trajectory 告诉你“往哪里分”，cosine similarity 告诉你“何时开始在方向上分叉”。</p>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">对应脚本</p>
+                    <h2>这页示意图分别对应哪些代码入口</h2>
+                </div>
+            </div>
+            <div class="feature-list">
+                <div class="feature-item">
+                    <strong>配对重排与 shared helpers</strong>
+                    <p class="muted"><a href="../testcode/task1_paired_decoding/common.py">testcode/task1_paired_decoding/common.py</a></p>
+                </div>
+                <div class="feature-item">
+                    <strong>paired grouped CV</strong>
+                    <p class="muted"><a href="../testcode/task1_paired_decoding/paired_group_cv_decoding.py">paired_group_cv_decoding.py</a></p>
+                </div>
+                <div class="feature-item">
+                    <strong>within-pair centered</strong>
+                    <p class="muted"><a href="../testcode/task1_paired_decoding/within_pair_centered_decoding.py">within_pair_centered_decoding.py</a></p>
+                </div>
+                <div class="feature-item">
+                    <strong>pair difference</strong>
+                    <p class="muted"><a href="../testcode/task1_paired_decoding/pair_difference_decoding.py">pair_difference_decoding.py</a></p>
+                </div>
+                <div class="feature-item">
+                    <strong>pairwise PCA scatter</strong>
+                    <p class="muted"><a href="../testcode/task1_paired_decoding/plot_pairwise_pca.py">plot_pairwise_pca.py</a></p>
+                </div>
+                <div class="feature-item">
+                    <strong>2D/3D trajectory</strong>
+                    <p class="muted"><a href="../testcode/task1_paired_decoding/plot_condition_pca_trajectories.py">plot_condition_pca_trajectories.py</a></p>
+                </div>
+                <div class="feature-item">
+                    <strong>cosine similarity</strong>
+                    <p class="muted"><a href="../testcode/task1_paired_decoding/plot_condition_cosine_similarity.py">plot_condition_cosine_similarity.py</a></p>
+                </div>
+            </div>
+            <div class="page-links">
+                <a href="04_pca_and_paired.html">返回解释页</a>
+                <a class="secondary" href="index.html">回首页</a>
+            </div>
+        </section>
+
+        <footer class="footer">
+            这页更适合直接展示给别人看方法。若你还需要，我可以继续补一页“从原始 trial 到图形输出”的动画式分步页面，或者把这些示意图和真实结果图拼成对照页。
+        </footer>
+    </main>
+</body>
+</html>

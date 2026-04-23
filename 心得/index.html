@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>心得 | Color iEEG 分析导航</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <strong>Project_colorieeg_2026 / 心得</strong>
+            <nav class="nav">
+                <a href="index.html">首页</a>
+                <a href="01_overview.html">总览</a>
+                <a href="02_preprocess_and_features.html">预处理与特征</a>
+                <a href="03_decoding_workflows.html">Decoding 方案</a>
+                <a href="04_pca_and_paired.html">PCA 与配对分析</a>
+                <a href="06_visual_schematics.html">可视化示意</a>
+                <a href="05_code_map.html">代码地图</a>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <span class="eyebrow">从刺激类别到分析输出</span>
+            <h1>newanalyse 与 testcode 的结构化总结</h1>
+            <p class="lead">
+                这个心得目录把当前项目拆成两条线来理解：一条是 <strong>newanalyse</strong> 的正式分析主线，负责把原始 SEEG/EEGLAB 数据稳定地变成 ROI 特征和 decoding 结果；另一条是 <strong>testcode</strong> 的问题驱动扩展线，负责做方法学对照、paired color-gray 分析、PCA 解释和若干审计脚本。
+            </p>
+            <div class="page-links">
+                <a href="01_overview.html">先看整体流程</a>
+                <a href="06_visual_schematics.html">直接看可视化示意</a>
+                <a class="secondary" href="05_code_map.html">直接跳到入口脚本</a>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">总览示意图</p>
+                    <h2>项目主线与扩展线如何衔接</h2>
+                </div>
+                <p>核心逻辑是：刺激设计定义条件结构，预处理定义可用 trial，ROI 特征定义可解码空间，主线 decoding 给出稳定结果，testcode 再在特殊问题上做更细的比较与可视化。</p>
+            </div>
+            <div class="diagram-wrap">
+                <svg class="diagram" viewBox="0 0 1180 420" xmlns="http://www.w3.org/2000/svg" aria-label="整体流程图">
+                    <defs>
+                        <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+                            <path d="M0,0 L12,6 L0,12 z" fill="#1b6a78"/>
+                        </marker>
+                    </defs>
+                    <rect x="22" y="28" width="180" height="114" rx="24" fill="#fff7ef" stroke="#a34331" stroke-width="2"/>
+                    <text x="48" y="66" font-size="26" fill="#17242b" font-weight="700">刺激图片结构</text>
+                    <text x="48" y="98" font-size="18" fill="#5e696f">Task1: face / body / object / scene</text>
+                    <text x="48" y="126" font-size="18" fill="#5e696f">每类包含 color 与 gray 条件</text>
+
+                    <rect x="248" y="28" width="192" height="114" rx="24" fill="#f5fbfc" stroke="#1b6a78" stroke-width="2"/>
+                    <text x="276" y="66" font-size="26" fill="#17242b" font-weight="700">Sec1 / 预处理</text>
+                    <text x="276" y="98" font-size="18" fill="#5e696f">epoch, baseline, bad epoch</text>
+                    <text x="276" y="126" font-size="18" fill="#5e696f">保存 ERP / TFA 分支与 trial 元数据</text>
+
+                    <rect x="488" y="28" width="208" height="114" rx="24" fill="#fffdf7" stroke="#d89d36" stroke-width="2"/>
+                    <text x="516" y="66" font-size="26" fill="#17242b" font-weight="700">Sec2 / ROI 特征</text>
+                    <text x="516" y="98" font-size="18" fill="#5e696f">ERP, highgamma, lowgamma, tfa</text>
+                    <text x="516" y="126" font-size="18" fill="#5e696f">gamma, gamma_multiband</text>
+
+                    <rect x="742" y="28" width="198" height="114" rx="24" fill="#f6f7ff" stroke="#6f77b3" stroke-width="2"/>
+                    <text x="768" y="66" font-size="26" fill="#17242b" font-weight="700">Sec3 / 主分析</text>
+                    <text x="768" y="98" font-size="18" fill="#5e696f">ROI decoding, cross decoding</text>
+                    <text x="768" y="126" font-size="18" fill="#5e696f">TFA 条件统计, electrode importance</text>
+
+                    <rect x="972" y="28" width="186" height="114" rx="24" fill="#fff7ef" stroke="#a34331" stroke-width="2"/>
+                    <text x="998" y="66" font-size="26" fill="#17242b" font-weight="700">Sec4 / Sec5</text>
+                    <text x="998" y="98" font-size="18" fill="#5e696f">批处理、重绘、汇总</text>
+                    <text x="998" y="126" font-size="18" fill="#5e696f">HTML 化与报告整理</text>
+
+                    <rect x="420" y="222" width="340" height="140" rx="28" fill="#fffaf4" stroke="#17242b" stroke-width="2" stroke-dasharray="8 8"/>
+                    <text x="454" y="264" font-size="28" fill="#17242b" font-weight="700">testcode / 扩展分析与方法学对照</text>
+                    <text x="454" y="298" font-size="19" fill="#5e696f">1. color-gray 四分类对照</text>
+                    <text x="454" y="326" font-size="19" fill="#5e696f">2. permutation / metric 对比</text>
+                    <text x="454" y="354" font-size="19" fill="#5e696f">3. paired decoding + PCA + cosine similarity</text>
+
+                    <line x1="202" y1="85" x2="248" y2="85" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow)"/>
+                    <line x1="440" y1="85" x2="488" y2="85" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow)"/>
+                    <line x1="696" y1="85" x2="742" y2="85" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow)"/>
+                    <line x1="940" y1="85" x2="972" y2="85" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow)"/>
+                    <path d="M592 142 C592 176, 592 190, 592 222" stroke="#a34331" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+                    <path d="M760 142 C760 190, 706 206, 676 222" stroke="#a34331" stroke-width="4" fill="none" marker-end="url(#arrow)"/>
+                </svg>
+                <p class="diagram-caption">正式输出目录主要在 <strong>processed_data</strong>、<strong>feature</strong>、<strong>result</strong>；实验性扩展主要位于 <strong>testcode</strong>，但最终也会把图和汇总写回 <strong>result/reports</strong>。</p>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">关键判断</p>
+                    <h2>读这个仓库时最容易踩错的四个点</h2>
+                </div>
+            </div>
+            <div class="cards">
+                <article class="card">
+                    <strong>TFA 命名不是直接等于时频图</strong>
+                    <p class="muted">当前 <code>task*_TFA_epoched.mat</code> 是 1-150 Hz 宽频分支的时域数据。真正 Morlet 条件比较发生在 <code>Sec3_s2_roi_condition_tfa.py</code>。</p>
+                </article>
+                <article class="card">
+                    <strong>ROI 映射允许通道进入多个 ROI</strong>
+                    <p class="muted">`get_roi_map.m` 不是互斥分组。功能 ROI 和解剖 ROI 之间存在 many-to-many 关系，解释统计结果时不能默认彼此独立。</p>
+                </article>
+                <article class="card">
+                    <strong>trial 数量由坏段剔除与最小条件数共同决定</strong>
+                    <p class="muted">`Sec1_preanalyse.m` 会先做共享 bad epoch 剔除，再把所有条件截成统一的 `min_trials`，并保存 repeat 对应元数据。</p>
+                </article>
+                <article class="card">
+                    <strong>paired decoding 依赖元数据重排</strong>
+                    <p class="muted">`testcode/task1_paired_decoding` 在使用 `groupedData` 之前，会先按保存的原始 repeat 索引重排，避免 color-gray 错配。</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">页面索引</p>
+                    <h2>推荐阅读顺序</h2>
+                </div>
+                <p>如果你是第一次接手这个项目，建议先按“任务结构 → 数据形成 → decoding → PCA/paired → 入口文件”这个顺序看。</p>
+            </div>
+            <div class="cards">
+                <article class="card">
+                    <strong><a href="01_overview.html">01_overview.html</a></strong>
+                    <p class="muted">从刺激图片种类、任务条件和输出目录出发，解释整个项目的主线布局。</p>
+                </article>
+                <article class="card">
+                    <strong><a href="02_preprocess_and_features.html">02_preprocess_and_features.html</a></strong>
+                    <p class="muted">把 `Sec1` 和 `Sec2` 的真实工作内容拆开讲清楚，尤其是 trial 处理和模态来源。</p>
+                </article>
+                <article class="card">
+                    <strong><a href="03_decoding_workflows.html">03_decoding_workflows.html</a></strong>
+                    <p class="muted">解释 decoding 原理、主线脚本、统计显著性与实验对照脚本之间的关系。</p>
+                </article>
+                <article class="card">
+                    <strong><a href="04_pca_and_paired.html">04_pca_and_paired.html</a></strong>
+                    <p class="muted">解释 PCA 可视化、配对 color-gray 方案、trajectory 与 cosine similarity 的意义。</p>
+                </article>
+                <article class="card">
+                    <strong><a href="06_visual_schematics.html">06_visual_schematics.html</a></strong>
+                    <p class="muted">用更直观的 SVG 示意图展示配对 decoding、PCA 投影、神经轨迹和相似度曲线的生成方式。</p>
+                </article>
+                <article class="card">
+                    <strong><a href="05_code_map.html">05_code_map.html</a></strong>
+                    <p class="muted">给出文件到职责的映射、推荐入口脚本，以及后续维护时应该先看哪里。</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">快速数字</p>
+                    <h2>当前仓库能支持的核心分析维度</h2>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <article class="card stat">
+                    <div class="stat-value">6</div>
+                    <strong>ROI 模态</strong>
+                    <p class="muted">ERP、highgamma、lowgamma、tfa、gamma、gamma_multiband。</p>
+                </article>
+                <article class="card stat">
+                    <div class="stat-value">3</div>
+                    <strong>paired decoding 主方案</strong>
+                    <p class="muted">grouped CV、within-pair centered、pair difference。</p>
+                </article>
+                <article class="card stat">
+                    <div class="stat-value">4+</div>
+                    <strong>结果输出树</strong>
+                    <p class="muted">`processed_data`、`feature`、`result/decoding`、`result/reports` 等。</p>
+                </article>
+                <article class="card stat">
+                    <div class="stat-value">2</div>
+                    <strong>主要阅读线</strong>
+                    <p class="muted">正式主线读 `newanalyse`，研究扩展读 `testcode`。</p>
+                </article>
+            </div>
+        </section>
+
+        <footer class="footer">
+            本心得目录是静态 HTML，可直接在文件浏览器或浏览器中打开。后续如果你继续补充新的分析脚本，建议同步在 05 页面登记入口、输入、输出和依赖关系。
+        </footer>
+    </main>
+</body>
+</html>

@@ -10,8 +10,16 @@
   "keep_runtime_config_files": false,
   "global_overrides": {
     "run_permutation_test": false,
+    "n_reals": 100,
     "n_perms": 0,
-    "time_smooth_win": 10
+    "time_smooth_win": 10,
+    "use_groupeddata_pairing": false,
+    "use_groupeddata_pair_centering": false,
+    "groupeddata_files": {
+      "task1": "testcode/task1_paired_decoding/groupedData.mat",
+      "task2": "",
+      "task3": ""
+    }
   },
   "steps": {
     "Sec2_2_preprocess_highgamma": {

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>心得 | 预处理与特征形成</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <main class="page">
+        <header class="topbar">
+            <strong>预处理与特征形成</strong>
+            <nav class="nav">
+                <a href="index.html">首页</a>
+                <a href="01_overview.html">总览</a>
+                <a href="02_preprocess_and_features.html">预处理与特征</a>
+                <a href="03_decoding_workflows.html">Decoding 方案</a>
+                <a href="04_pca_and_paired.html">PCA 与配对分析</a>
+                <a href="06_visual_schematics.html">可视化示意</a>
+                <a href="05_code_map.html">代码地图</a>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <span class="eyebrow">02 / Preprocess & Features</span>
+            <h1>真正决定数据质量的是 Sec1 和 Sec2</h1>
+            <p class="lead">
+                如果说 decoding 和 PCA 负责“读出信息”，那么 `Sec1_preanalyse.m` 与 `Sec2_*` 负责“定义什么是可以被读出的信号对象”。这一步决定了 trial 是否保留、时间窗是否对齐、ROI 是否重叠，以及不同模态到底代表什么。</p>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">Sec1 核心逻辑</p>
+                    <h2>预处理不是单纯切 epoch，而是在形成可复用的 trial 轴</h2>
+                </div>
+                <p>当前主线以 <a href="../newanalyse/Sec1_preanalyse.m">Sec1_preanalyse.m</a> 为准，旧的 <a href="../newanalyse/preanalyse.m">preanalyse.m</a> 更像历史版本，不应该再作为主解释依据。</p>
+            </div>
+            <div class="diagram-wrap">
+                <svg class="diagram" viewBox="0 0 1180 460" xmlns="http://www.w3.org/2000/svg" aria-label="预处理流程图">
+                    <defs>
+                        <marker id="arrow-pre" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+                            <path d="M0,0 L12,6 L0,12 z" fill="#1b6a78"/>
+                        </marker>
+                    </defs>
+                    <rect x="40" y="46" width="182" height="106" rx="22" fill="#fff7ef" stroke="#a34331" stroke-width="2"/>
+                    <text x="68" y="82" font-size="22" fill="#17242b" font-weight="700">原始 .set</text>
+                    <text x="68" y="112" font-size="16" fill="#5e696f">事件、坏道、EEGLAB 结构</text>
+
+                    <rect x="274" y="46" width="206" height="106" rx="22" fill="#f5fbfc" stroke="#1b6a78" stroke-width="2"/>
+                    <text x="302" y="82" font-size="22" fill="#17242b" font-weight="700">切 task 与 epoch</text>
+                    <text x="302" y="112" font-size="16" fill="#5e696f">时间窗 -500 ~ 1000 ms</text>
+
+                    <rect x="532" y="46" width="212" height="106" rx="22" fill="#fffdf7" stroke="#d89d36" stroke-width="2"/>
+                    <text x="560" y="82" font-size="22" fill="#17242b" font-weight="700">共享坏段剔除</text>
+                    <text x="560" y="112" font-size="16" fill="#5e696f">ERP 与 TFA 使用一致的 bad epoch 信息</text>
+
+                    <rect x="796" y="46" width="320" height="106" rx="22" fill="#f6f7ff" stroke="#6f77b3" stroke-width="2"/>
+                    <text x="824" y="82" font-size="21" fill="#17242b" font-weight="700">trial 统一与元数据保存</text>
+                    <text x="824" y="112" font-size="15" fill="#5e696f">min_trials、original repeat index、global epoch index</text>
+
+                    <rect x="196" y="232" width="324" height="146" rx="28" fill="#fffaf4" stroke="#17242b" stroke-width="2"/>
+                    <text x="226" y="272" font-size="24" fill="#17242b" font-weight="700">ERP 分支</text>
+                    <text x="226" y="304" font-size="17" fill="#5e696f">1-30 Hz，基线校正</text>
+                    <text x="226" y="330" font-size="17" fill="#5e696f">保存 task*_ERP_epoched.mat</text>
+                    <text x="226" y="356" font-size="17" fill="#5e696f">后续进入 ERP ROI 特征提取</text>
+
+                    <rect x="642" y="232" width="324" height="146" rx="28" fill="#fffaf4" stroke="#17242b" stroke-width="2"/>
+                    <text x="672" y="272" font-size="24" fill="#17242b" font-weight="700">TFA 宽频分支</text>
+                    <text x="672" y="304" font-size="17" fill="#5e696f">1-150 Hz，仍是时域 epoch</text>
+                    <text x="672" y="330" font-size="17" fill="#5e696f">保存 task*_TFA_epoched.mat</text>
+                    <text x="672" y="356" font-size="17" fill="#5e696f">后续进入 gamma / tfa / multiband</text>
+
+                    <line x1="222" y1="99" x2="274" y2="99" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-pre)"/>
+                    <line x1="480" y1="99" x2="532" y2="99" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-pre)"/>
+                    <line x1="744" y1="99" x2="796" y2="99" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-pre)"/>
+                    <path d="M906 152 C906 188, 780 210, 804 232" fill="none" stroke="#1b6a78" stroke-width="4" marker-end="url(#arrow-pre)"/>
+                    <path d="M852 152 C852 188, 428 210, 358 232" fill="none" stroke="#a34331" stroke-width="4" marker-end="url(#arrow-pre)"/>
+                </svg>
+                <p class="diagram-caption">`Sec1_preanalyse.m` 的关键价值不是单纯生成两个 `.mat` 文件，而是把“哪些 trial 被保留、保留下来的 trial 在原始重复序列里对应哪里”这件事也一起保存了下来。</p>
+            </div>
+            <div class="note" style="margin-top:18px;">
+                当前 paired decoding 会读取 `bad_epoch_indices`、`condition_original_repeat_index`、`condition_global_epoch_index` 等字段，再把 `groupedData` 对齐到实际保存下来的 repeat 轴。这是现在 color-gray 一对一比较能成立的前提。
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">两个预处理版本</p>
+                    <h2>为什么旧 preanalyse 与新 Sec1_preanalyse 结果会不一样</h2>
+                </div>
+            </div>
+            <div class="two-col">
+                <article class="card">
+                    <strong>旧版 `preanalyse.m`</strong>
+                    <p class="muted">更接近早期流程，主要做 task 切分和最小 trial 数对齐。它不包含现在这一版那么完整的共享坏段剔除和 repeat 元数据追踪，因此同一 task 最终保留下来的 trial 数可能更高，但可追踪性更弱。</p>
+                </article>
+                <article class="card">
+                    <strong>新版 `Sec1_preanalyse.m`</strong>
+                    <p class="muted">先做 robust SEEG bad epoch 判断，再对所有条件截成同一个 `min_trials`，并把剔除索引和原始 repeat 信息写入文件。结果更严格，但更适合作为 paired 或 permutation 分析的可靠上游。</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">ROI 映射</p>
+                    <h2>ROI 不是互斥箱子，而是允许重叠</h2>
+                </div>
+            </div>
+            <div class="cards">
+                <article class="card">
+                    <strong>映射入口</strong>
+                    <p class="muted">所有 `Sec2_*` 基本都依赖 <a href="../newanalyse/get_roi_map.m">get_roi_map.m</a>，再基于 `ieegloc.xlsx` 与公共通道列表把 channel 分配给 ROI。</p>
+                </article>
+                <article class="card">
+                    <strong>many-to-many 现象</strong>
+                    <p class="muted">同一个 channel 可能同时被放进功能 ROI 与解剖 ROI。因此两个 ROI 都显著，不代表它们来自完全独立的电极集合。</p>
+                </article>
+                <article class="card">
+                    <strong>解释上的含义</strong>
+                    <p class="muted">跨 ROI 做比较时，需要先判断自己是否接受这种重叠。如果要互斥 ROI，就必须重写映射规则，而不是继续沿用当前输出。</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="section-header">
+                <div>
+                    <p class="kicker">Sec2 模态地图</p>
+                    <h2>六类 ROI 特征分别来自哪里</h2>
+                </div>
+                <p>ERP 与 TFA 宽频分支是底层源头，gamma 家族都是在 TFA 宽频分支上继续做包络或多频带加工。</p>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>模态</th>
+                            <th>代表脚本</th>
+                            <th>上游来源</th>
+                            <th>主要含义</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>ERP</td>
+                            <td><a href="../newanalyse/Sec2_1_preprocess_erp.m">Sec2_1_preprocess_erp.m</a></td>
+                            <td>task*_ERP_epoched.mat</td>
+                            <td>低频时域电位，主要是直接裁 ROI 和时间窗</td>
+                        </tr>
+                        <tr>
+                            <td>highgamma</td>
+                            <td><a href="../newanalyse/Sec2_2_preprocess_highgamma.m">Sec2_2_preprocess_highgamma.m</a></td>
+                            <td>task*_TFA_epoched.mat</td>
+                            <td>70-150 Hz Hilbert 包络和功率</td>
+                        </tr>
+                        <tr>
+                            <td>lowgamma</td>
+                            <td><a href="../newanalyse/Sec2_3_preprocess_lowgamma.m">Sec2_3_preprocess_lowgamma.m</a></td>
+                            <td>task*_TFA_epoched.mat</td>
+                            <td>30-70 Hz 包络和功率</td>
+                        </tr>
+                        <tr>
+                            <td>tfa</td>
+                            <td><a href="../newanalyse/Sec2_4_preprocess_tfa.m">Sec2_4_preprocess_tfa.m</a></td>
+                            <td>task*_TFA_epoched.mat</td>
+                            <td>1-150 Hz 宽频时域 ROI 输入，不是频率 x 时间张量</td>
+                        </tr>
+                        <tr>
+                            <td>gamma</td>
+                            <td><a href="../newanalyse/Sec2_5_preprocess_gamma.m">Sec2_5_preprocess_gamma.m</a></td>
+                            <td>task*_TFA_epoched.mat</td>
+                            <td>30-100 Hz 宽频 gamma 包络，当前还未完全接入统一批处理</td>
+                        </tr>
+                        <tr>
+                            <td>gamma_multiband</td>
+                            <td><a href="../newanalyse/Sec2_6_preprocess_gamma_multiband.m">Sec2_6_preprocess_gamma_multiband.m</a></td>
+                            <td>task*_TFA_epoched.mat</td>
+                            <td>多 band、多 channel 特征，元数据最完整</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="section-card">
+            <div class="quote">
+                预处理和特征提取的最大作用是把“原始记录”转换成“可比较对象”。一旦 trial 轴和 ROI 轴定义清楚，后面的 decoding、PCA、paired 对齐才会真正可靠。
+            </div>
+            <div class="page-links">
+                <a href="03_decoding_workflows.html">下一页：Decoding 方案</a>
+                <a class="secondary" href="01_overview.html">返回上一页</a>
+            </div>
+        </section>
+
+        <footer class="footer">
+            本页重点是数据形成。下一页开始进入“如何消费这些数据对象”，包括 time-resolved decoding、交叉解码、条件统计和实验性对照脚本。
+        </footer>
+    </main>
+</body>
+</html>
