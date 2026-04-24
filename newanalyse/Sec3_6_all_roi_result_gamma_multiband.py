@@ -59,21 +59,23 @@ ROI_FILE_PATTERN = 'Color_with*.mat'
 RUN_PERMUTATION_TEST = True
 FEATURE_KIND = 'gamma_multiband'
 FIELD_PREFIX = 'gmb'
-USE_GROUPEDDATA_PAIRING = False
-USE_GROUPEDDATA_PAIR_CENTERING = False
-GROUPEDDATA_FILES = {'task1': '', 'task2': '', 'task3': ''}
+USE_GROUPEDDATA_PAIRING = True
+USE_GROUPEDDATA_PAIR_CENTERING = True
+GROUPEDDATA_FILES = {'task1':'/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/testcode/task1_paired_decoding/groupedData.mat', 
+                     'task2': '', 
+                     'task3': ''}
 DEFAULT_CATEGORY_PAIRS_BY_TASK = {
     'task1': [(0, 1), (2, 3), (4, 5), (6, 7)],
 }
 DEFAULT_CATEGORY_NAMES_BY_TASK = {
-    'task1': ['face', 'body', 'object', 'scene'],
+    'task1': ['face', 'object', 'body', 'scene'],
 }
 
 TASKS = [
     # {   
     #     'id': 'task1_color_vs_gray_pair_cv',
     #     'title': 'Task 1 Color vs Gray Pair Holdout Decoding',
-    #     'description': 'Four-fold pair holdout: three odd-even pairs for train, one pair for test.',
+    #     'description': 'Decode color vs gray within each of 4 categories (face/object/body/scene), then average AUC across categories.',
     #     'mode': 'pair_holdout_task1',
     #     'folder': 'task1_color_vs_gray_pair_cv3'
     # },

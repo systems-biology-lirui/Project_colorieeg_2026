@@ -33,7 +33,7 @@ from newanalyse_paths import get_feature_dir, project_root, result_root
 # 4) TASK_FIELD: optional manual override of the task1 field inside the ROI file.
 #    Leave as None to follow the modality defaults from newanalyse.
 # 5) COLOR_CONDITION_INDICES / GRAY_CONDITION_INDICES: task1 condition indices used for 4-way category decoding.
-#    The default mapping assumes [face, body, object, scene].
+#    The default mapping assumes [face, object, body, scene].
 # 6) CATEGORY_NAMES: the class labels corresponding to those four conditions.
 # 7) METRIC_NAME: 'acc' is the main 4-class decoding metric. 'auc_ovr' is optional macro one-vs-rest AUC.
 # 8) N_PERMS / N_REPEATS_PERM: set to 0 if you only want the real decoding curve without permutation significance.
@@ -44,7 +44,7 @@ TASK_FIELD = None
 
 COLOR_CONDITION_INDICES = [0, 2, 4, 6]
 GRAY_CONDITION_INDICES = [1, 3, 5, 7]
-CATEGORY_NAMES = ['face', 'body', 'object', 'scene']
+CATEGORY_NAMES = ['face', 'object', 'body', 'scene']
 
 METRIC_NAME = 'auc_ovr'  # 'acc' | 'auc_ovr'
 N_SPLITS = 5

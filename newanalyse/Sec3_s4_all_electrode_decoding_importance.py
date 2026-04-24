@@ -77,7 +77,7 @@ DEFAULT_CATEGORY_PAIRS_BY_TASK = {
     'task1': [(0, 1), (2, 3), (4, 5), (6, 7)],
 }
 DEFAULT_CATEGORY_NAMES_BY_TASK = {
-    'task1': ['face', 'body', 'object', 'scene'],
+    'task1': ['face', 'object', 'body', 'scene'],
 }
 
 TASKS = [

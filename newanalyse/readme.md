@@ -245,7 +245,7 @@ ROI 分组入口统一是 `get_roi_map(loc_file, common_channels)`。
 	'mode': 'within_category_color_gray',
 	'task_name': 'task2',
 	'category_pairs': [(0, 1), (2, 3), (4, 5), (6, 7)],
-	'category_names': ['face', 'body', 'object', 'scene'],
+	'category_names': ['face', 'object', 'body', 'scene'],
 	'use_groupeddata_pairing': True,
 	'use_groupeddata_pair_centering': True,
 	'groupeddata_mat': 'path/to/task2_groupedData.mat',

@@ -69,7 +69,7 @@ DEFAULT_CATEGORY_PAIRS_BY_TASK = {
     'task1': [(0, 1), (2, 3), (4, 5), (6, 7)],
 }
 DEFAULT_CATEGORY_NAMES_BY_TASK = {
-    'task1': ['face', 'body', 'object', 'scene'],
+    'task1': ['face', 'object', 'body', 'scene'],
 }
 
 TASKS = [
@@ -103,7 +103,7 @@ TASKS = [
     {
         'id': 'task1_color_vs_gray_per_category',
         'title': 'Task 1 Color vs Gray Per-Category Decoding',
-        'description': 'Decode color vs gray within each of 4 categories (face/body/object/scene), then average AUC across categories.',
+        'description': 'Decode color vs gray within each of 4 categories (face/object/body/scene), then average AUC across categories.',
         'mode': 'within_category_color_gray',
         'task_name': 'task1',
         'folder': 'task1_color_vs_gray_per_category'

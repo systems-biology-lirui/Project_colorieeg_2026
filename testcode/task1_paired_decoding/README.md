@@ -18,7 +18,7 @@ Default Task1 condition mapping:
 
 - Color conditions: `0,2,4,6`
 - Gray conditions: `1,3,5,7`
-- Categories: `face,body,object,scene`
+- Categories: `face,object,body,scene`
 
 Scripts:
 

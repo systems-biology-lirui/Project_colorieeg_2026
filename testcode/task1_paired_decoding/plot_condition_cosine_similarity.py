@@ -107,12 +107,25 @@ def compute_cross_rsm(color_patterns, gray_patterns):
 
 
 def compute_full_condition_rsm(color_patterns, gray_patterns):
-    combined_patterns = []
-    for category_idx in range(color_patterns.shape[0]):
-        combined_patterns.append(color_patterns[category_idx])
-        combined_patterns.append(gray_patterns[category_idx])
-    combined_patterns = np.stack(combined_patterns, axis=0)
+    combined_patterns = np.concatenate([color_patterns, gray_patterns], axis=0)
     return correlation_matrix_from_patterns(combined_patterns)
+
+
+def compute_condition_block_means(condition_rsms, n_categories):
+    within_color = np.zeros(condition_rsms.shape[0], dtype=float)
+    within_gray = np.zeros(condition_rsms.shape[0], dtype=float)
+    between_color_gray = np.zeros(condition_rsms.shape[0], dtype=float)
+    color_slice = slice(0, n_categories)
+    gray_slice = slice(n_categories, 2 * n_categories)
+
+    for time_idx, rsm in enumerate(condition_rsms):
+        color_block = rsm[color_slice, color_slice]
+        gray_block = rsm[gray_slice, gray_slice]
+        cross_block = rsm[color_slice, gray_slice]
+        within_color[time_idx] = float(np.mean(extract_upper_triangle(color_block)))
+        within_gray[time_idx] = float(np.mean(extract_upper_triangle(gray_block)))
+        between_color_gray[time_idx] = float(np.mean(cross_block))
+    return within_color, within_gray, between_color_gray
 
 
 def compute_rsa_over_time(color_means, gray_means):
@@ -268,6 +281,63 @@ def plot_condition_snapshot_grid(save_path, snapshot_times, condition_labels, co
     plt.close(fig)
 
 
+def plot_block_mean_curves(save_path, full_time_vector, sampled_time_vector, raw_curves, centered_curves, sampled=False):
+    fig, axes = plt.subplots(2, 1, figsize=(12, 8), sharex=True, squeeze=False)
+    row_specs = [
+        ('Raw 8-condition block means', raw_curves),
+        ('Centered 8-condition block means', centered_curves),
+    ]
+    colors = {
+        'within_color': '#1f77b4',
+        'within_gray': '#d62728',
+        'between_color_gray': '#2ca02c',
+    }
+    line_styles = {
+        'within_color': '-',
+        'within_gray': '--',
+        'between_color_gray': '-.',
+    }
+    zorders = {
+        'within_color': 4,
+        'within_gray': 3,
+        'between_color_gray': 2,
+    }
+    labels = {
+        'within_color': 'Within-color mean',
+        'within_gray': 'Within-gray mean',
+        'between_color_gray': 'Color-gray mean',
+    }
+    time_vector = sampled_time_vector if sampled else full_time_vector
+    suffix = 'sampled every snapshot step' if sampled else 'all timepoints'
+
+    for row_idx, (title, curves) in enumerate(row_specs):
+        ax = axes[row_idx, 0]
+        for key in ('within_color', 'within_gray', 'between_color_gray'):
+            values = curves[key][1] if sampled else curves[key][0]
+            plot_kwargs = {
+                'color': colors[key],
+                'linewidth': 2.4 if key == 'within_color' else 2.0,
+                'linestyle': line_styles[key],
+                'label': labels[key],
+                'zorder': zorders[key],
+            }
+            if sampled:
+                plot_kwargs['marker'] = 'o'
+                plot_kwargs['markersize'] = 4.5 if key == 'within_color' else 4.0
+            ax.plot(time_vector, values, **plot_kwargs)
+        ax.axhline(0.0, color='black', linestyle=':', linewidth=1.0)
+        ax.axvline(0.0, color='#999999', linestyle='--', linewidth=1.0)
+        ax.set_ylabel('Mean similarity')
+        ax.set_ylim(-1.05, 1.05)
+        ax.set_title(f'{title} | {suffix}', fontsize=11)
+        ax.grid(True, linestyle='--', alpha=0.35)
+        ax.legend(loc='best', fontsize=9)
+    axes[-1, 0].set_xlabel('Time (ms)')
+    plt.tight_layout()
+    plt.savefig(save_path, dpi=300, bbox_inches='tight')
+    plt.close(fig)
+
+
 def main():
     parser = build_parser()
     args = parser.parse_args()
@@ -315,6 +385,14 @@ def main():
         [compute_full_condition_rsm(centered_color_means[:, :, time_idx], centered_gray_means[:, :, time_idx]) for time_idx in range(centered_color_means.shape[2])],
         axis=0,
     )
+    raw_within_color_mean, raw_within_gray_mean, raw_between_color_gray_mean = compute_condition_block_means(
+        raw_condition_rsms,
+        len(paired_dataset.category_names),
+    )
+    centered_within_color_mean, centered_within_gray_mean, centered_between_color_gray_mean = compute_condition_block_means(
+        centered_condition_rsms,
+        len(paired_dataset.category_names),
+    )
     category_colors = ['#1f77b4', '#d62728', '#2ca02c', '#ff7f0e', '#9467bd', '#8c564b', '#e377c2', '#17becf']
     raw_category_thresholds = []
     raw_category_sig_indices = []
@@ -336,6 +414,8 @@ def main():
     fig_path = out_dir / 'condition_mean_rsa.png'
     raw_snapshot_fig_path = out_dir / 'condition_mean_rsa_snapshots_raw.png'
     centered_snapshot_fig_path = out_dir / 'condition_mean_rsa_snapshots_centered.png'
+    block_mean_full_fig_path = out_dir / 'condition_mean_rsa_block_means_full.png'
+    block_mean_sampled_fig_path = out_dir / 'condition_mean_rsa_block_means_sampled.png'
     npz_path = out_dir / 'condition_mean_rsa.npz'
 
     fig, axes = plt.subplots(len(paired_dataset.category_names), 1, figsize=(12, 2.8 * len(paired_dataset.category_names)), sharex=True, squeeze=False)
@@ -357,9 +437,8 @@ def main():
     plt.savefig(fig_path, dpi=300, bbox_inches='tight')
     plt.close(fig)
 
-    condition_labels = []
-    for category_name in paired_dataset.category_names:
-        condition_labels.extend([f'{category_name}-color', f'{category_name}-gray'])
+    condition_labels = [f'{category_name}-color' for category_name in paired_dataset.category_names]
+    condition_labels.extend([f'{category_name}-gray' for category_name in paired_dataset.category_names])
     plot_condition_snapshot_grid(
         raw_snapshot_fig_path,
         snapshot_times,
@@ -375,6 +454,33 @@ def main():
         centered_condition_rsms,
         snapshot_indices,
         'Centered 8-condition similarity snapshots',
+    )
+
+    raw_block_curves = {
+        'within_color': (raw_within_color_mean, raw_within_color_mean[snapshot_indices]),
+        'within_gray': (raw_within_gray_mean, raw_within_gray_mean[snapshot_indices]),
+        'between_color_gray': (raw_between_color_gray_mean, raw_between_color_gray_mean[snapshot_indices]),
+    }
+    centered_block_curves = {
+        'within_color': (centered_within_color_mean, centered_within_color_mean[snapshot_indices]),
+        'within_gray': (centered_within_gray_mean, centered_within_gray_mean[snapshot_indices]),
+        'between_color_gray': (centered_between_color_gray_mean, centered_between_color_gray_mean[snapshot_indices]),
+    }
+    plot_block_mean_curves(
+        block_mean_full_fig_path,
+        roi_bundle.time_vector,
+        snapshot_times,
+        raw_block_curves,
+        centered_block_curves,
+        sampled=False,
+    )
+    plot_block_mean_curves(
+        block_mean_sampled_fig_path,
+        roi_bundle.time_vector,
+        snapshot_times,
+        raw_block_curves,
+        centered_block_curves,
+        sampled=True,
     )
 
     np.savez(
@@ -402,6 +508,12 @@ def main():
         centered_gray_rsms=centered_gray_rsms,
         raw_condition_rsms=raw_condition_rsms,
         centered_condition_rsms=centered_condition_rsms,
+        raw_within_color_mean=raw_within_color_mean,
+        raw_within_gray_mean=raw_within_gray_mean,
+        raw_between_color_gray_mean=raw_between_color_gray_mean,
+        centered_within_color_mean=centered_within_color_mean,
+        centered_within_gray_mean=centered_within_gray_mean,
+        centered_between_color_gray_mean=centered_between_color_gray_mean,
         raw_rsa_timecourse=raw_rsa_timecourse,
         centered_rsa_timecourse=centered_rsa_timecourse,
         raw_perm_curves=raw_perm_curves,
@@ -434,6 +546,8 @@ def main():
             'figure_path': str(fig_path),
             'raw_snapshot_figure_path': str(raw_snapshot_fig_path),
             'centered_snapshot_figure_path': str(centered_snapshot_fig_path),
+            'block_mean_full_figure_path': str(block_mean_full_fig_path),
+            'block_mean_sampled_figure_path': str(block_mean_sampled_fig_path),
             'summary_path': str(npz_path),
             'selected_category_names': paired_dataset.category_names,
             'analysis_name': 'mean_pattern_rsa',
