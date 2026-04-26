@@ -28,7 +28,7 @@ NEWANALYSE_ROOT = PROJECT_ROOT / 'newanalyse'
 if str(NEWANALYSE_ROOT) not in sys.path:
     sys.path.insert(0, str(NEWANALYSE_ROOT))
 
-from newanalyse_paths import get_feature_dir, project_root, result_root, sanitize_token
+from newanalyse_paths import get_feature_dir, get_task_groupeddata_path, project_root, result_root, sanitize_token
 
 
 T_START = -100.0
@@ -38,7 +38,7 @@ DEFAULT_SUBJECT = 'test001'
 DEFAULT_FEATURE_KIND = 'erp'
 DEFAULT_ROI_NAME = 'Color_with_sti'
 DEFAULT_TASK_FIELD = None
-DEFAULT_GROUPED_DATA_MAT = '/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/testcode/task1_paired_decoding/groupedData.mat'
+DEFAULT_GROUPED_DATA_MAT = None
 DEFAULT_COLOR_CONDITION_INDICES = [0, 2, 4, 6]
 DEFAULT_GRAY_CONDITION_INDICES = [1, 3, 5, 7]
 DEFAULT_CATEGORY_NAMES = ['face', 'object', 'body', 'scene']
@@ -212,11 +212,9 @@ def normalize_common_args(args):
     gray_condition_indices = parse_int_list(args.gray_condition_indices)
     category_names = parse_name_list(args.category_names)
 
-    if not args.grouped_data_mat:
-        raise ValueError(
-            'Please provide --grouped-data-mat. The .mat file must contain groupedData as a 4x2 cell. '
-            'Each row is a category, column 1 is color ids, column 2 is gray ids.'
-        )
+    grouped_data_arg = args.grouped_data_mat
+    if not grouped_data_arg:
+        grouped_data_arg = str(get_task_groupeddata_path(project_root(), args.subject, 'task1'))
     if len(color_condition_indices) != len(gray_condition_indices):
         raise ValueError('Color and gray condition index lists must have the same length.')
     if len(category_names) != len(color_condition_indices):
@@ -232,7 +230,7 @@ def normalize_common_args(args):
     if args.decoding_step < 1:
         raise ValueError('DECODING_STEP must be at least 1.')
 
-    grouped_data_mat = Path(args.grouped_data_mat).expanduser()
+    grouped_data_mat = Path(grouped_data_arg).expanduser()
     if not grouped_data_mat.is_absolute():
         grouped_data_mat = (Path.cwd() / grouped_data_mat).resolve()
     if not grouped_data_mat.is_file():

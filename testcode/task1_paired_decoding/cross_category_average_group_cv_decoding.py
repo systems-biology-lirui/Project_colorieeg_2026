@@ -1,6 +1,7 @@
 import argparse
 import time
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 
@@ -21,7 +22,7 @@ from common import (
 SUBJECT = 'test001'
 FEATURE_KIND = 'erp'
 ROI_NAME = 'Color_with_sti'
-GROUPED_DATA_MAT = '/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/testcode/task1_paired_decoding/groupedData.mat'
+GROUPED_DATA_MAT = str(Path(__file__).resolve().parents[2] / 'processed_data' / SUBJECT / 'groupedData.mat')
 TASK_FIELD = None
 METRIC = 'auc'
 TIME_SMOOTH_WIN = 5
@@ -49,11 +50,14 @@ SCHEME_NOTE = (
 
 
 def build_script_config():
+    grouped_data_mat = GROUPED_DATA_MAT
+    if not grouped_data_mat:
+        grouped_data_mat = str(Path(__file__).resolve().parents[2] / 'processed_data' / SUBJECT / 'groupedData.mat')
     args = argparse.Namespace(
         subject=SUBJECT,
         feature_kind=FEATURE_KIND,
         roi_name=ROI_NAME,
-        grouped_data_mat=GROUPED_DATA_MAT,
+        grouped_data_mat=grouped_data_mat,
         task_field=TASK_FIELD,
         metric=METRIC,
         time_smooth_win=TIME_SMOOTH_WIN,

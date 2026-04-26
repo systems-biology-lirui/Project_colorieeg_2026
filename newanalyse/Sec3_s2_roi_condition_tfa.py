@@ -195,11 +195,15 @@ def compute_group_tfr(trials, freqs, n_cycles, sfreq, times_ms):
 
 
 def build_output_dirs(output_root, comparison_id):
-    base_dir = get_roi_condition_tfa_dir(BASE_PATH, TASK, SUBJECT, comparison_id)
+    if output_root is None:
+        base_dir = get_roi_condition_tfa_dir(BASE_PATH, TASK, SUBJECT, comparison_id)
+    else:
+        base_dir = Path(output_root) / sanitize_token(comparison_id)
     dirs = {
         "base": base_dir,
         "mat": base_dir / "mat",
         "fig_roi_panel": base_dir / "figures" / "roi_panel",
+        "fig_roi_diff": base_dir / "figures" / "roi_diff",
     }
     for path in dirs.values():
         path.mkdir(parents=True, exist_ok=True)
@@ -287,6 +291,64 @@ def plot_roi_condition_grid(
     plt.close(fig)
 
 
+def plot_roi_difference_grid(
+    diff_roi_mean,
+    diff_channel_mean,
+    channel_names,
+    times_ms,
+    freqs,
+    roi_name,
+    save_path,
+    vmin,
+    vmax,
+):
+    row_labels = ["ROI diff"] + list(channel_names)
+    n_rows = len(channel_names) + 1
+    height = max(2.8 * n_rows, 5.0)
+    fig, axes = plt.subplots(
+        n_rows,
+        1,
+        figsize=(7.2, height),
+        squeeze=False,
+        sharex=True,
+        sharey=True,
+    )
+
+    last_mesh = None
+    for row_idx in range(n_rows):
+        ax = axes[row_idx, 0]
+        current = diff_roi_mean if row_idx == 0 else diff_channel_mean[:, :, row_idx - 1]
+        last_mesh = ax.pcolormesh(
+            times_ms,
+            freqs,
+            current,
+            shading="auto",
+            cmap=DIFF_CMAP,
+            vmin=vmin,
+            vmax=vmax,
+        )
+        ax.axvline(0.0, color="black", linestyle="--", linewidth=0.8)
+        ax.set_ylabel(f"{row_labels[row_idx]}\nFreq (Hz)")
+        if row_idx == 0:
+            ax.set_title(f"{GROUP_A_LABEL} - {GROUP_B_LABEL}")
+        if row_idx == n_rows - 1:
+            ax.set_xlabel("Time (ms)")
+
+    group_a_str = ",".join(str(v) for v in GROUP_A)
+    group_b_str = ",".join(str(v) for v in GROUP_B)
+    fig.suptitle(
+        f"{SUBJECT} | {roi_name} | {TASK}\n"
+        f"Difference map: {GROUP_A_LABEL} (cond {group_a_str}) - {GROUP_B_LABEL} (cond {group_b_str})",
+        y=0.995,
+    )
+    fig.subplots_adjust(left=0.16, right=0.88, bottom=0.04, top=0.96, hspace=0.30)
+    cbar_ax = fig.add_axes([0.90, 0.10, 0.018, 0.80])
+    cbar = fig.colorbar(last_mesh, cax=cbar_ax)
+    cbar.set_label("Power difference")
+    fig.savefig(save_path, dpi=DPI, bbox_inches="tight")
+    plt.close(fig)
+
+
 def save_roi_result(
     save_path,
     roi_name,
@@ -300,6 +362,7 @@ def save_roi_result(
     group_b_trial_power,
     group_a_channel_mean,
     group_b_channel_mean,
+    diff_channel_mean,
     group_a_roi_mean,
     group_b_roi_mean,
 ):
@@ -320,6 +383,7 @@ def save_roi_result(
         "group_b_trials": group_b_trials.astype(np.float32),
         "group_a_channel_mean": group_a_channel_mean.astype(np.float32),
         "group_b_channel_mean": group_b_channel_mean.astype(np.float32),
+        "diff_channel_mean": diff_channel_mean.astype(np.float32),
         "group_a_roi_mean": group_a_roi_mean.astype(np.float32),
         "group_b_roi_mean": group_b_roi_mean.astype(np.float32),
         "diff_roi_mean": (group_a_roi_mean - group_b_roi_mean).astype(np.float32),
@@ -369,6 +433,7 @@ def write_summary_csv(rows, save_path):
         "n_freqs",
         "mat_path",
         "panel_figure",
+        "diff_figure",
     ]
     with open(save_path, "w", newline="", encoding="utf-8") as handle:
         writer = csv.DictWriter(handle, fieldnames=fieldnames)
@@ -421,12 +486,15 @@ def process_roi(mat_file, output_dirs, freqs, n_cycles):
         times_ms=times_ms,
     )
     diff_roi_mean = group_a_roi_mean - group_b_roi_mean
+    diff_channel_mean = group_a_channel_mean - group_b_channel_mean
 
     power_limits, _ = compute_limits(group_a_roi_mean, group_b_roi_mean, diff_roi_mean)
+    _, diff_limits = compute_limits(group_a_roi_mean, group_b_roi_mean, diff_roi_mean)
     roi_name = mat_file.stem
     safe_roi = sanitize_token(roi_name)
 
     panel_fig_path = output_dirs["fig_roi_panel"] / f"{safe_roi}.png"
+    diff_fig_path = output_dirs["fig_roi_diff"] / f"{safe_roi}.png"
     mat_path = output_dirs["mat"] / f"{safe_roi}.mat"
 
     group_a_str = ",".join(str(v) for v in GROUP_A)
@@ -444,6 +512,17 @@ def process_roi(mat_file, output_dirs, freqs, n_cycles):
         vmin=power_limits[0],
         vmax=power_limits[1],
     )
+    plot_roi_difference_grid(
+        diff_roi_mean,
+        diff_channel_mean,
+        channel_names,
+        times_ms=times_ms,
+        freqs=freqs,
+        roi_name=roi_name,
+        save_path=diff_fig_path,
+        vmin=diff_limits[0],
+        vmax=diff_limits[1],
+    )
 
     save_roi_result(
         save_path=mat_path,
@@ -458,6 +537,7 @@ def process_roi(mat_file, output_dirs, freqs, n_cycles):
         group_b_trial_power=group_b_trial_power,
         group_a_channel_mean=group_a_channel_mean,
         group_b_channel_mean=group_b_channel_mean,
+        diff_channel_mean=diff_channel_mean,
         group_a_roi_mean=group_a_roi_mean,
         group_b_roi_mean=group_b_roi_mean,
     )
@@ -475,6 +555,7 @@ def process_roi(mat_file, output_dirs, freqs, n_cycles):
         "n_freqs": int(len(freqs)),
         "mat_path": str(mat_path),
         "panel_figure": str(panel_fig_path),
+        "diff_figure": str(diff_fig_path),
     }
 
 

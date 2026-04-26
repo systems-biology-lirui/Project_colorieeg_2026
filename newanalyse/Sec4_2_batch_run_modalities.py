@@ -17,6 +17,7 @@ DRY_RUN = False
 
 RUN_PREPROCESS = True
 RUN_DECODING = False
+RUN_REPORTS = False
 
 SUBJECTS = ['test001']
 CONFIG_PATH = None
@@ -24,8 +25,15 @@ KEEP_RUNTIME_CONFIG_FILES = False
 
 GLOBAL_OVERRIDES = {
 "run_permutation_test": True,
-"n_perms": 200,
-"time_smooth_win": 10
+"n_reals": 20,
+"n_splits": 5,
+"n_repeats_real": 5,
+"n_repeats_perm": 5,
+"n_perms": 100,
+"time_smooth_win": 5,
+"decoding_step": 5,
+"use_groupeddata_pairing": True,
+"use_groupeddata_pair_centering": True,
 }
 
 STEP_OVERRIDES = {}
@@ -43,6 +51,14 @@ PREPROCESS_STEPS = [
     },
     {
         'enabled': False,
+        'name': 'Gamma ROI Features',
+        'script': NEWANALYSE_DIR / 'Sec2_5_preprocess_gamma.m',
+        'entry': 'Sec2_5_preprocess_gamma',
+        'script_key': 'Sec2_5_preprocess_gamma',
+    },
+    {
+        'enabled': False,
+        'kind': 'matlab',
         'kind': 'matlab',
         'name': 'High-Gamma ROI Features',
         'script': NEWANALYSE_DIR / 'Sec2_2_preprocess_highgamma.m',
@@ -111,6 +127,14 @@ DECODING_STEPS = [
     {
         'enabled': True,
         'kind': 'python',
+        'name': 'Gamma Within Decoding',
+        'script': NEWANALYSE_DIR / 'Sec3_5_all_roi_result_gamma.py',
+        'script_key': 'Sec3_5_all_roi_result_gamma',
+        'feature_subdir': 'decoding_gamma_features',
+    },
+    {
+        'enabled': True,
+        'kind': 'python',
         'name': 'TFA Within Decoding',
         'script': NEWANALYSE_DIR / 'Sec3_4_all_roi_result_tfa.py',
         'script_key': 'Sec3_4_all_roi_result_tfa',
@@ -123,6 +147,77 @@ DECODING_STEPS = [
         'script': NEWANALYSE_DIR / 'Sec3_6_all_roi_result_gamma_multiband.py',
         'script_key': 'Sec3_6_all_roi_result_gamma_multiband',
         'feature_subdir': 'decoding_gamma_multiband_features',
+    },
+    {
+        'enabled': True,
+        'kind': 'python',
+        'name': 'ERP Cross-Category Average Decoding',
+        'script': NEWANALYSE_DIR / 'Sec3_8_all_roi_result_cross_category_average.py',
+        'script_key': 'Sec3_8_all_roi_result_cross_category_average_erp',
+        'feature_subdir': 'decoding_erp_features',
+        'runtime_overrides': {'feature_kind': 'erp', 'analysis_mode': 'center'},
+    },
+    {
+        'enabled': True,
+        'kind': 'python',
+        'name': 'High-Gamma Cross-Category Average Decoding',
+        'script': NEWANALYSE_DIR / 'Sec3_8_all_roi_result_cross_category_average.py',
+        'script_key': 'Sec3_8_all_roi_result_cross_category_average_highgamma',
+        'feature_subdir': 'decoding_highgamma_features',
+        'runtime_overrides': {'feature_kind': 'highgamma', 'analysis_mode': 'center'},
+    },
+    {
+        'enabled': True,
+        'kind': 'python',
+        'name': 'Low-Gamma Cross-Category Average Decoding',
+        'script': NEWANALYSE_DIR / 'Sec3_8_all_roi_result_cross_category_average.py',
+        'script_key': 'Sec3_8_all_roi_result_cross_category_average_lowgamma',
+        'feature_subdir': 'decoding_lowgamma_features',
+        'runtime_overrides': {'feature_kind': 'lowgamma', 'analysis_mode': 'center'},
+    },
+    {
+        'enabled': True,
+        'kind': 'python',
+        'name': 'Gamma Cross-Category Average Decoding',
+        'script': NEWANALYSE_DIR / 'Sec3_8_all_roi_result_cross_category_average.py',
+        'script_key': 'Sec3_8_all_roi_result_cross_category_average_gamma',
+        'feature_subdir': 'decoding_gamma_features',
+        'runtime_overrides': {'feature_kind': 'gamma', 'analysis_mode': 'center'},
+    },
+    {
+        'enabled': True,
+        'kind': 'python',
+        'name': 'TFA Cross-Category Average Decoding',
+        'script': NEWANALYSE_DIR / 'Sec3_8_all_roi_result_cross_category_average.py',
+        'script_key': 'Sec3_8_all_roi_result_cross_category_average_tfa',
+        'feature_subdir': 'decoding_tfa_features',
+        'runtime_overrides': {'feature_kind': 'tfa', 'analysis_mode': 'center'},
+    },
+    {
+        'enabled': True,
+        'kind': 'python',
+        'name': 'Gamma Multiband Cross-Category Average Decoding',
+        'script': NEWANALYSE_DIR / 'Sec3_8_all_roi_result_cross_category_average.py',
+        'script_key': 'Sec3_8_all_roi_result_cross_category_average_gamma_multiband',
+        'feature_subdir': 'decoding_gamma_multiband_features',
+        'runtime_overrides': {'feature_kind': 'gamma_multiband', 'analysis_mode': 'center'},
+    },
+]
+
+REPORT_STEPS = [
+    {
+        'enabled': True,
+        'kind': 'python',
+        'name': 'Task1 Decoding Summary HTML',
+        'script': NEWANALYSE_DIR / 'Sec5_3_build_task1_decoding_summary_html.py',
+        'script_key': 'Sec5_3_build_task1_decoding_summary_html',
+    },
+    {
+        'enabled': True,
+        'kind': 'python',
+        'name': 'Task1 Significant ROI ERP/TFA Follow-up',
+        'script': NEWANALYSE_DIR / 'Sec5_4_followup_significant_roi_erp_tfa.py',
+        'script_key': 'Sec5_4_followup_significant_roi_erp_tfa',
     },
 ]
 
@@ -166,7 +261,7 @@ def configure_steps(default_steps, overrides_by_step):
     steps = []
     for source in default_steps:
         step = dict(source)
-        override = dict(overrides_by_step.get(step_key(step), {}))
+        override = merge_named_dicts(step.get('runtime_overrides', {}), overrides_by_step.get(step_key(step), {}))
         if 'enabled' in override:
             step['enabled'] = bool(override.pop('enabled'))
         step['runtime_overrides'] = override
@@ -179,6 +274,7 @@ def collect_settings():
     subjects = normalize_subjects(external.get('subjects', SUBJECTS))
     run_preprocess = bool(external.get('run_preprocess', RUN_PREPROCESS))
     run_decoding = bool(external.get('run_decoding', RUN_DECODING))
+    run_reports = bool(external.get('run_reports', RUN_REPORTS))
     dry_run = bool(external.get('dry_run', DRY_RUN))
     stop_on_error = bool(external.get('stop_on_error', STOP_ON_ERROR))
     keep_runtime = bool(external.get('keep_runtime_config_files', KEEP_RUNTIME_CONFIG_FILES))
@@ -188,17 +284,20 @@ def collect_settings():
 
     preprocess_steps = configure_steps(PREPROCESS_STEPS, step_overrides)
     decoding_steps = configure_steps(DECODING_STEPS, step_overrides)
+    report_steps = configure_steps(REPORT_STEPS, step_overrides)
 
     return {
         'subjects': subjects,
         'run_preprocess': run_preprocess,
         'run_decoding': run_decoding,
+        'run_reports': run_reports,
         'dry_run': dry_run,
         'stop_on_error': stop_on_error,
         'keep_runtime': keep_runtime,
         'global_overrides': global_overrides,
         'preprocess_steps': preprocess_steps,
         'decoding_steps': decoding_steps,
+        'report_steps': report_steps,
     }
 
 
@@ -218,7 +317,7 @@ def build_subject_runtime_payload(subject, global_overrides, step_groups):
     }
     for group in step_groups:
         for step in group:
-            if step['kind'] != 'matlab':
+            if step.get('kind') != 'matlab':
                 continue
             overrides = dict(global_overrides)
             overrides.update(step.get('runtime_overrides', {}))
@@ -230,12 +329,14 @@ def build_subject_runtime_payload(subject, global_overrides, step_groups):
 def build_step_overrides(subject, global_overrides, step):
     overrides = dict(global_overrides)
     overrides.update(step.get('runtime_overrides', {}))
-    overrides['subject'] = subject
+    if subject is not None:
+        overrides['subject'] = subject
     return overrides
 
 
 def run_python_step(step, subject, overrides, dry_run):
-    print(f"\n===== {step['name']} | subject={subject} =====")
+    subject_label = subject if subject is not None else 'global'
+    print(f"\n===== {step['name']} | subject={subject_label} =====")
     print(f"Script: {step['script']}")
     print(f"Overrides: {overrides}")
     if dry_run:
@@ -278,12 +379,13 @@ def run_matlab_step(step, subject, overrides, runtime_config_path, dry_run):
 
 
 def run_group(group_name, steps, subject, settings, runtime_config_path):
+    subject_label = subject if subject is not None else 'global'
     enabled_steps = [step for step in steps if step['enabled']]
     if not enabled_steps:
-        print(f'{group_name} | subject={subject}: no enabled steps, skip.')
+        print(f'{group_name} | subject={subject_label}: no enabled steps, skip.')
         return []
 
-    print(f"\n######## {group_name} | subject={subject} ########")
+    print(f"\n######## {group_name} | subject={subject_label} ########")
     group_start = time.time()
     timings = []
     for step in enabled_steps:
@@ -298,7 +400,7 @@ def run_group(group_name, steps, subject, settings, runtime_config_path):
 
             timings.append(
                 {
-                    'subject': subject,
+                    'subject': subject_label,
                     'group': group_name,
                     'name': step['name'],
                     'duration': duration,
@@ -306,12 +408,12 @@ def run_group(group_name, steps, subject, settings, runtime_config_path):
             )
             print(f"[TIME] {step['name']}: {format_seconds(duration)}")
         except Exception as exc:
-            print(f"[ERROR] {step['name']} failed for {subject}: {exc}")
+            print(f"[ERROR] {step['name']} failed for {subject_label}: {exc}")
             if settings['stop_on_error']:
                 raise
 
     group_duration = time.time() - group_start
-    print(f"[TIME] {group_name} total for {subject}: {format_seconds(group_duration)}")
+    print(f"[TIME] {group_name} total for {subject_label}: {format_seconds(group_duration)}")
     return timings
 
 
@@ -363,6 +465,13 @@ def main():
         finally:
             if not settings['keep_runtime'] and runtime_config_path.exists():
                 runtime_config_path.unlink()
+
+    if settings['run_reports']:
+        all_timings.extend(
+            run_group('REPORT', settings['report_steps'], None, settings, runtime_config_path=None)
+        )
+    else:
+        print('REPORT disabled.')
 
     total_duration = time.time() - total_start
     print_timing_summary(all_timings, total_duration)

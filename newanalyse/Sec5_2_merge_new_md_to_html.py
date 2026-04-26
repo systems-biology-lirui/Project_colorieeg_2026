@@ -8,6 +8,7 @@ import numpy as np
 import argparse
 import base64
 import io
+from pathlib import Path
 
 # ──────────────────────────────────────────────────────────────
 # 绘图相关导入
@@ -21,6 +22,8 @@ import matplotlib.patches as mpatches
 
 from nilearn import plotting as nlplot
 from nilearn import datasets as nldatasets
+
+from newanalyse_paths import project_root
 
 
 
@@ -550,7 +553,7 @@ _script_start_time = time.time()
 parser.add_argument('--subjects', nargs='+', default=['test001', 'test002'],
                     help='List of subject IDs to include')
 parser.add_argument('--base-dir',
-                    default='/home/lirui/liulab_project/ieeg/Project_colorieeg_2026',
+                    default=str(project_root()),
                     help='Base project directory')
 
 args = parser.parse_args()
@@ -599,8 +602,7 @@ for subject in args.subjects:
 
 # ── 本地库读取（CSS/JS 嵌入）────────────────────────────────
 def read_local_file(filepath):
-    full_path = os.path.join(
-        '/home/lirui/liulab_project/ieeg/Project_colorieeg_2026', filepath)
+    full_path = Path(args.base_dir) / filepath
     if os.path.exists(full_path):
         with open(full_path, 'r', encoding='utf-8') as f:
             return f.read()

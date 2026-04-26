@@ -34,6 +34,7 @@ from newanalyse_paths import (
     get_all_electrode_summary_path,
     get_all_electrode_task_dir,
     get_feature_dir,
+    get_task_groupeddata_path,
     project_root,
 )
 
@@ -72,7 +73,7 @@ IMPORTANCE_TOP_N = 20
 BATCH_NAME = 'all_electrode_decoding_importance'
 USE_GROUPEDDATA_PAIRING = False
 USE_GROUPEDDATA_PAIR_CENTERING = False
-GROUPEDDATA_FILES = {'task1': '', 'task2': '', 'task3': ''}
+GROUPEDDATA_FILES = {}
 DEFAULT_CATEGORY_PAIRS_BY_TASK = {
     'task1': [(0, 1), (2, 3), (4, 5), (6, 7)],
 }
@@ -140,6 +141,11 @@ FEATURE_CONFIG = {
 
 
 _RUNTIME_CFG = load_runtime_config(__file__, sections=('python_defaults', 'sec3_defaults'))
+GROUPEDDATA_FILES = {
+    'task1': str(get_task_groupeddata_path(BASE_PATH, SUBJECT, 'task1')),
+    'task2': '',
+    'task3': '',
+}
 if _RUNTIME_CFG:
     SUBJECT = str(_RUNTIME_CFG.get('subject', SUBJECT))
     FEATURE_KIND = str(_RUNTIME_CFG.get('feature_kind', FEATURE_KIND))
@@ -159,6 +165,11 @@ if _RUNTIME_CFG:
     BATCH_NAME = str(_RUNTIME_CFG.get('batch_name', BATCH_NAME))
     USE_GROUPEDDATA_PAIRING = bool(_RUNTIME_CFG.get('use_groupeddata_pairing', USE_GROUPEDDATA_PAIRING))
     USE_GROUPEDDATA_PAIR_CENTERING = bool(_RUNTIME_CFG.get('use_groupeddata_pair_centering', USE_GROUPEDDATA_PAIR_CENTERING))
+    GROUPEDDATA_FILES = {
+        'task1': str(get_task_groupeddata_path(BASE_PATH, SUBJECT, 'task1')),
+        'task2': '',
+        'task3': '',
+    }
     if 'groupeddata_files' in _RUNTIME_CFG:
         GROUPEDDATA_FILES = dict(_RUNTIME_CFG['groupeddata_files'])
     if 'tasks' in _RUNTIME_CFG:

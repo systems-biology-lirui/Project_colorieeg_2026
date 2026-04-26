@@ -52,3 +52,8 @@ Thumbs.db
 mne_data/
 oldcode/
 python_libs/
+
+# groupeddata
+!/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/processed_data/test001/groupedData.mat
+!/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/processed_data/test002/groupedData.mat
+!/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/processed_data/test003/groupedData.mat

@@ -3,23 +3,23 @@
     "test001",
     "test002"
   ],
-  "run_preprocess": true,
+  "run_preprocess": false,
   "run_decoding": true,
+  "run_reports": true,
   "dry_run": false,
   "stop_on_error": true,
   "keep_runtime_config_files": false,
   "global_overrides": {
-    "run_permutation_test": false,
-    "n_reals": 100,
-    "n_perms": 0,
-    "time_smooth_win": 10,
-    "use_groupeddata_pairing": false,
-    "use_groupeddata_pair_centering": false,
-    "groupeddata_files": {
-      "task1": "testcode/task1_paired_decoding/groupedData.mat",
-      "task2": "",
-      "task3": ""
-    }
+    "run_permutation_test": true,
+    "n_reals": 20,
+    "n_splits": 5,
+    "n_repeats_real": 5,
+    "n_repeats_perm": 5,
+    "n_perms": 100,
+    "time_smooth_win": 5,
+    "decoding_step": 5,
+    "use_groupeddata_pairing": true,
+    "use_groupeddata_pair_centering": true
   },
   "steps": {
     "Sec2_2_preprocess_highgamma": {
@@ -28,9 +28,11 @@
     },
     "Sec3_1_all_roi_result_erp": {
       "enabled": true,
-      "time_smooth_win": 10,
-      "run_permutation_test": false,
-      "n_perms": 0
+      "time_smooth_win": 5
+    },
+    "Sec3_8_all_roi_result_cross_category_average_erp": {
+      "enabled": true,
+      "analysis_mode": "center"
     }
   }
 }

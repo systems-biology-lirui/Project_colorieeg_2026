@@ -26,6 +26,7 @@ from groupeddata_pairing import (
 )
 from newanalyse_paths import (
     get_feature_dir,
+    get_task_groupeddata_path,
     get_within_decoding_batch_dir,
     get_within_decoding_task_dir,
     project_root,
@@ -63,7 +64,7 @@ FEATURE_KIND = 'highgamma'
 FIELD_PREFIX = 'hg'
 USE_GROUPEDDATA_PAIRING = False
 USE_GROUPEDDATA_PAIR_CENTERING = False
-GROUPEDDATA_FILES = {'task1': '', 'task2': '', 'task3': ''}
+GROUPEDDATA_FILES = {}
 DEFAULT_CATEGORY_PAIRS_BY_TASK = {
     'task1': [(0, 1), (2, 3), (4, 5), (6, 7)],
 }
@@ -128,6 +129,11 @@ TASKS = [
 
 
 _RUNTIME_CFG = load_runtime_config(__file__, sections=('python_defaults', 'sec3_defaults'))
+GROUPEDDATA_FILES = {
+    'task1': str(get_task_groupeddata_path(BASE_PATH, SUBJECT, 'task1')),
+    'task2': '',
+    'task3': '',
+}
 if _RUNTIME_CFG:
     SUBJECT = str(_RUNTIME_CFG.get('subject', SUBJECT))
     BASE_PATH = str(_RUNTIME_CFG.get('base_path', BASE_PATH))
@@ -145,6 +151,11 @@ if _RUNTIME_CFG:
     RUN_PERMUTATION_TEST = bool(_RUNTIME_CFG.get('run_permutation_test', RUN_PERMUTATION_TEST))
     USE_GROUPEDDATA_PAIRING = bool(_RUNTIME_CFG.get('use_groupeddata_pairing', USE_GROUPEDDATA_PAIRING))
     USE_GROUPEDDATA_PAIR_CENTERING = bool(_RUNTIME_CFG.get('use_groupeddata_pair_centering', USE_GROUPEDDATA_PAIR_CENTERING))
+    GROUPEDDATA_FILES = {
+        'task1': str(get_task_groupeddata_path(BASE_PATH, SUBJECT, 'task1')),
+        'task2': '',
+        'task3': '',
+    }
     if 'groupeddata_files' in _RUNTIME_CFG:
         GROUPEDDATA_FILES = dict(_RUNTIME_CFG['groupeddata_files'])
     if 'tasks' in _RUNTIME_CFG:

@@ -37,6 +37,21 @@ def result_root(base_path=None):
     return project_root(base_path) / 'result'
 
 
+def processed_data_root(base_path=None):
+    return project_root(base_path) / 'processed_data'
+
+
+def get_subject_processed_dir(base_path, subject):
+    return processed_data_root(base_path) / str(subject)
+
+
+def get_task_groupeddata_path(base_path, subject, task_name='task1'):
+    subject_dir = get_subject_processed_dir(base_path, subject)
+    if str(task_name) == 'task1':
+        return subject_dir / 'groupedData.mat'
+    return subject_dir / f'{task_name}groupedData.mat'
+
+
 def sanitize_token(text):
     token = ''.join(ch if ch.isalnum() or ch in {'_', '-'} else '_' for ch in str(text))
     return token.strip('_') or 'Unknown'
