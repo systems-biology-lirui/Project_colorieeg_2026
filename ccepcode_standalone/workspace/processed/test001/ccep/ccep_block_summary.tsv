@@ -1,0 +1,11 @@
+candidate_block_index	block_index	site_label	start_latency	start_time_sec	has_stop_event	stop_latency	observed_duration_sec	is_valid	block_status	exclude_reason	superseded_by_event_index	superseded_by_latency	kept_pulse_count
+1	1	D4-D5	102568	205.135000	1	122568	40.000000	1	valid		NaN	NaN	40
+2	2	D5-D6	152646	305.290000	1	172646	40.000000	1	valid		NaN	NaN	40
+3	NaN	G5-G6	194341	388.680000	0	NaN	NaN	0	failed_duplicate	consecutive_duplicate_superseded_by_later_trigger	6	244644	0
+4	3	G5-G6	244644	489.285000	1	264644	40.000000	1	valid		NaN	NaN	40
+5	4	G6-G7	295624	591.245000	1	315624	40.000000	1	valid		NaN	NaN	40
+6	5	D10-D11	337406	674.810000	1	357406	40.000000	1	valid		NaN	NaN	40
+7	6	D11-D12	374078	748.155000	1	394078	40.000000	1	valid		NaN	NaN	40
+8	7	D12-D13	412066	824.130000	1	432066	40.000000	1	valid		NaN	NaN	40
+9	8	D13-D14	442124	884.245000	1	462124	40.000000	1	valid		NaN	NaN	40
+10	9	G10-G11	475254	950.505000	1	495254	40.000000	1	valid		NaN	NaN	40

@@ -1,0 +1,21 @@
+name: colorieeg-0720
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - numpy
+  - scipy
+  - pandas
+  - matplotlib
+  - openpyxl
+  - h5py
+  - mne
+  - scikit-learn
+  - nilearn
+  - statsmodels
+  - joblib
+  - jupyterlab
+  - nbclient
+  - pip
+  - pip:
+      - pymatreader

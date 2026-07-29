@@ -76,9 +76,9 @@ TASKS = [
     # {
     #     'id': 'task3_1vs4_self_1000',
     #     'title': 'Task 3 Pure Color Self-Decoding: Condition 1 vs Condition 4',
-        'description': 'Decode color vs gray within each of 4 categories (face/object/body/scene), then average AUC across categories.',
+    #     'description': 'Decode color vs gray within each of 4 categories (face/object/body/scene), then average AUC across categories.',
     #     'mode': 'within_cv',
-        'task_name': 'task1',
+    #     'task_name': 'task1',
     #     'data_key': 'hg_task3',
     #     'class0': [0],
     #     'class1': [3],

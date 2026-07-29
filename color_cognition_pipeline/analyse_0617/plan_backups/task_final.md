@@ -1,0 +1,22 @@
+# Step 5, Step 6 & Step 7 解码与信号差异分析进度表
+
+- [x] 新一轮分析任务执行
+  - [x] 备份 Step 5~7 实施计划到 `analyse_0617/plan_backups/` 目录
+  - [x] 开发与执行 Step 5：memory_color 电极聚类解码
+    - [x] 提取 31 个 memory_color 电极，利用 MNI_Y 分为 Posterior 与 Anterior 两组
+    - [x] 对两个 cluster 分别进行 ERP memory color 的多被试/单被试 SVM 解码与 GLMM 检验
+    - [x] 对两个 cluster 分别进行 ERP true/false color 的多被试/单被试 SVM 解码（LOGO 4折）与 GLMM 检验
+    - [x] 导出解码数据并绘制 4 张解码曲线图
+  - [x] 开发与执行 Step 6：颞极单电极真假颜色 ERP 信号差异分析
+    - [x] 提取 temporal_pole 的单电极（共 10 个）的 Task 2 True vs Fake Color 试次
+    - [x] 对每个电极进行逐时间点 Wilcoxon 检验（判断是否存在连续 50ms 显著段）
+    - [x] 对每个电极进行 200-500ms 均值 Wilcoxon 检验
+    - [x] 为每个通道绘制 1行2列 差异分析复合图，并导出统计结果 Excel 表
+  - [x] 开发与执行 Step 7：color_with_sti 电极集全套分析
+    - [x] 去重并加载 3 被试共 18 个 color_with_sti 先验电极
+    - [x] 子任务 7_1：单电极 Color vs Gray 信号差别分析，进行 50ms 段及 200-500ms 均值检验，绘制 18 张差异图并导出统计表
+    - [x] 子任务 7_2：多电极 ERP memory color 解码（灰色水果测试）及多被试 GLMM 检验，画图并保存数据
+    - [x] 子任务 7_3：多电极 ERP 红绿纯色二分类解码及多被试 GLMM 检验，画图并保存数据
+    - [x] 子任务 7_4：跨任务解码（红绿训练，灰色测试），计算并绘制下采样 2D TG 热图以及 1D 对角线解码曲线及 GLMM 检验，画图并保存数据
+    - [x] 子任务 7_5：多电极 ERP 真假颜色 LOGO 4折解码及多被试 GLMM 检验，画图并保存数据
+  - [x] 更新 Walkthrough 报告并进行最终的 plan_backups 物理备份

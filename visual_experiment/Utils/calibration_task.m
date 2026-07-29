@@ -10,8 +10,8 @@ function calibration_task()
     addpath(genpath(fullfile(pwd, 'Configs')));
     addpath(genpath( fullfile(pwd, 'Utils')));
 
-    % Load Task 2 Config to get path
-    cfg = config_task2(); 
+    % Load Task 3 Config to get path
+    cfg = config_task3(); 
     
     % Stimuli Directory
     stimDir = 'D:\Desktop\seeg\stimuli_pic\Stimuli_Task2';

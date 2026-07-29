@@ -84,9 +84,6 @@ EEG = pop_eegfiltnew(EEG, 'locutoff', 1);  % 1Hz 高通滤波，去除慢漂移
 
 % ==================== 3. 自动坏道剔除 (方差超 3SD) ====================
 fprintf('--- 剔除并插值坏道 ---\n');
-% 使用 EEGLAB 内置函数，基于方差(var)，阈值为3个标准差剔除坏道
-% ==================== 3. 自动坏道剔除 (方差超 3SD) ====================
-fprintf('--- 计算方差并标记坏道 ---\n');
 
 % 1. 计算每个通道在时间维度上的方差
 chan_vars = var(EEG.data, 0, 2);
@@ -100,9 +97,9 @@ indElec = find(chan_vars > (mean_var + 3 * std_var) | chan_vars < (mean_var - 3 
 
 
 
-% ==================== 4. 局部混合重参考 (SEEG 1D Laplace + Bipolar) ====================
+%% ==================== 4. 局部混合重参考 (SEEG 1D Laplace + Bipolar) ====================
 fprintf('--- 执行 SEEG 局部重参考 ---\n');
-%%
+
 % 获取所有通道名称
 chan_labels = {EEG.chanlocs.labels};
 num_chans = length(chan_labels);
@@ -299,6 +296,59 @@ EEG_TFA = pop_epoch(EEG_TFA, target_event, [-0.5 1.0], 'newname', 'TFA_epochs', 
 % 7. 基线矫正 (-200 到 0ms)
 EEG_TFA = pop_rmbase(EEG_TFA, [-200 0]);
 
+
+%% ==================== 分支 C: HG (High-Gamma) 处理管线 ====================
+% 核心改进：在连续数据上做多频段 Hilbert 包络提取，避免 epoch 边界的边缘效应
+fprintf('\n>>> 开始执行 HG (High-Gamma) 分支管线 <<<\n');
+EEG_HG = EEG_Ref;  % 从公共预处理节点开始（已完成陷波+高通+重参考+200Hz低通）
+
+% --- C.1 多频段 Hilbert 包络提取（在连续全长数据上） ---
+hg_bands = [70 80; 80 90; 90 100; 100 110; 110 120; 120 130; 130 140; 140 150];
+n_hg_bands = size(hg_bands, 1);
+hg_filter_order = 4;
+hg_envelope_accum = zeros(size(EEG_HG.data), 'double');
+
+fprintf('  多频段提取: %d 个子带 (%.0f-%.0f Hz)\n', n_hg_bands, hg_bands(1,1), hg_bands(end,2));
+for b = 1:n_hg_bands
+    fprintf('  子带 %d/%d: %.0f-%.0f Hz ... ', b, n_hg_bands, hg_bands(b,1), hg_bands(b,2));
+    [b_filt, a_filt] = butter(hg_filter_order, hg_bands(b,:) / (EEG_HG.srate/2), 'bandpass');
+    % 逐通道处理以控制内存占用
+    for ch = 1:EEG_HG.nbchan
+        filtered = filtfilt(b_filt, a_filt, double(EEG_HG.data(ch, :)));
+        analytic = hilbert(filtered);
+        power_env = abs(analytic).^2;
+        hg_envelope_accum(ch, :) = hg_envelope_accum(ch, :) + log10(power_env + eps);
+    end
+    fprintf('完成\n');
+end
+
+% 多频段平均（对数域）
+EEG_HG.data = single(hg_envelope_accum / n_hg_bands);
+clear hg_envelope_accum;
+fprintf('  多频段对数功率平均完成\n');
+
+% --- C.2 Epoch 分割 (-500 到 1000ms) ---
+EEG_HG = pop_epoch(EEG_HG, target_event, [-0.5 1.0], 'newname', 'HG_epochs', 'epochinfo', 'yes');
+
+% --- C.3 逐 trial 逐通道 z-score 基线校正 (-250 ~ -50 ms) ---
+fprintf('  z-score 基线校正 (-250 ~ -50 ms)...\n');
+hg_bl_pts = find(EEG_HG.times >= -250 & EEG_HG.times <= -50);
+for ch = 1:EEG_HG.nbchan
+    for ep = 1:EEG_HG.trials
+        bl_seg = double(EEG_HG.data(ch, hg_bl_pts, ep));
+        bl_mean = mean(bl_seg);
+        bl_std = std(bl_seg);
+        if bl_std > eps
+            EEG_HG.data(ch, :, ep) = single((double(EEG_HG.data(ch, :, ep)) - bl_mean) / bl_std);
+        else
+            EEG_HG.data(ch, :, ep) = single(double(EEG_HG.data(ch, :, ep)) - bl_mean);
+        end
+    end
+end
+fprintf('  HG 分支 epoch + 基线校正完成 (trials=%d, channels=%d, points=%d)\n', ...
+    EEG_HG.trials, EEG_HG.nbchan, EEG_HG.pnts);
+
+
 % 8. 去除坏段 (SEEG 更适合基于试次异常程度做稳健剔除，而不是固定振幅阈值)
 EEG_QC = EEG_Ref;
 EEG_QC = pop_epoch(EEG_QC, target_event, [-0.5 1.0], 'newname', 'QC_epochs', 'epochinfo', 'yes');
@@ -315,6 +365,7 @@ if ENABLE_BAD_EPOCH_REJECTION
             max(bad_epoch_stats.bad_channel_fraction(bad_epochs)));
         EEG_ERP = pop_select(EEG_ERP, 'notrial', bad_epochs);
         EEG_TFA = pop_select(EEG_TFA, 'notrial', bad_epochs);
+        EEG_HG  = pop_select(EEG_HG,  'notrial', bad_epochs);
     else
         fprintf('未检测到需要剔除的坏段。\n');
     end
@@ -446,6 +497,52 @@ end
 mat_filename = fullfile(save_path, sprintf('task%d_TFA_epoched.mat',task_label));
 save(mat_filename, 'epoch');
 fprintf('成功将干净的 Epoch 矩阵及标签保存至: %s\n', mat_filename);
+
+
+%% ==================== HG Epoched .mat ====================
+fprintf('\n>>> 正在提取 HG 3D 矩阵并保存为 .mat 文件 <<<\n');
+
+epoch = struct();
+epoch.ch = EEG_HG.chanlocs;
+epoch.name = sprintf('hg%d', task_label);
+epoch.bad_epoch_indices = bad_epoch_indices_saved;
+epoch.total_epoch_count_before_bad = total_epoch_count_before_bad;
+epoch.time_ms = EEG_HG.times;
+epoch.hg_bands = [70 80; 80 90; 90 100; 100 110; 110 120; 120 130; 130 140; 140 150];
+epoch.hg_processing = 'multiband_log_mean_zscore';
+
+min_trials_hg = Inf;
+for i = 1:length(target_event)
+    idx = strcmp(target_event{i}, {EEG_HG.epoch.eventtype});
+    current_trials = sum(idx);
+    if current_trials < min_trials_hg
+        min_trials_hg = current_trials;
+    end
+end
+fprintf('  HG 数据保留最小 Trial 数: %d\n', min_trials_hg);
+
+hg_selection_meta = build_epoch_selection_metadata(all_epoch_eventtypes_before_bad, bad_epoch_indices_saved, target_event, min_trials_hg);
+epoch.condition_original_count = hg_selection_meta.condition_original_count;
+epoch.condition_kept_count_before_trim = hg_selection_meta.condition_kept_count_before_trim;
+epoch.condition_original_repeat_index = hg_selection_meta.condition_original_repeat_index;
+epoch.condition_global_epoch_index = hg_selection_meta.condition_global_epoch_index;
+epoch.min_trials = min_trials_hg;
+
+n_chans_hg = EEG_HG.nbchan;
+n_times_hg = EEG_HG.pnts;
+epoch.data = zeros(length(target_event), min_trials_hg, n_chans_hg, n_times_hg);
+
+for i = 1:length(target_event)
+    event_indices = find(strcmp(target_event{i}, {EEG_HG.epoch.eventtype}));
+    selected_indices = event_indices(1:min_trials_hg);
+    trial_data = EEG_HG.data(:, :, selected_indices);
+    epoch.data(i, :, :, :) = permute(trial_data, [3, 1, 2]);
+end
+
+mat_filename = fullfile(save_path, sprintf('task%d_HG_epoched.mat', task_label));
+save(mat_filename, 'epoch');
+fprintf('成功将 HG Epoch 矩阵保存至: %s\n', mat_filename);
+
 end
 
 function meta = build_epoch_selection_metadata(all_epoch_eventtypes, removed_bad_epochs, target_event, n_keep)
