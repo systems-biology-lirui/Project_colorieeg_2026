@@ -1,0 +1,24 @@
+run_id: continuous_selection_100ms_100-400_20260809
+status: completed
+recorded_at_utc: 2026-08-09T14:27:34.7921687Z
+command: >-
+  E:\software\Anaconda\python.exe color_analyse_0727\analysis\continuous_selection.py
+  --out color_analyse_0727\result\continuous_selection_100ms_100-400_20260809
+  --signal lf30 --scan-start 100 --scan-end 400 --min-duration-ms 100 --alpha 0.05
+git_commit: 121c9c236ad32312a913b611bbb935e53f15d8f0
+worktree_at_run_start: dirty
+python: Python 3.13.9
+script: color_analyse_0727/analysis/continuous_selection.py
+script_sha256: 18DBA849888E1776B4F880D333063E09F26BDFD7F1A85D882B9668AA4778DBB0
+historical_selection_input: color_analyse_0727/result/final_analysis_seeg_20260806_corrected/stage01_selection/functional_selection_100-400_lf30.csv
+historical_selection_sha256: 4509B96FC4545822CAB0C0FC53C02E6975C76D8E0E1F864D1E47D1CB31142CEC
+outputs:
+  result_root: color_analyse_0727/result/continuous_selection_100ms_100-400_20260809/
+  electrode_table: color_analyse_0727/result/continuous_selection_100ms_100-400_20260809/stage01_continuous_selection/continuous_selection_lf30.csv
+  summary_table: color_analyse_0727/result/continuous_selection_100ms_100-400_20260809/stage01_continuous_selection/continuous_selection_summary_lf30.csv
+  representative_figure: color_analyse_0727/result/continuous_selection_100ms_100-400_20260809/figures/continuous_selection_summary_lf30.png
+  p_values: color_analyse_0727/result/continuous_selection_100ms_100-400_20260809/p_values/
+warnings:
+  - Pointwise p-values are not corrected for multiple comparisons across time, electrodes, or analysis branches.
+  - The candidate set is exploratory and does not replace the current electrode set.
+  - The primary category-balanced candidate count is unchanged from the 200 ms run; the shorter threshold did not add primary candidates in this data.

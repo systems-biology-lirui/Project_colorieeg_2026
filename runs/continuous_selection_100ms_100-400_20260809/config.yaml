@@ -1,0 +1,12 @@
+run_id: continuous_selection_100ms_100-400_20260809
+analysis: Task 1 continuous electrode selection
+signal: lf30
+baseline_ms: [-200.0, 0.0]
+scan_window_ms: [100.0, 400.0]
+minimum_continuous_duration_ms: 100.0
+pointwise_alpha: 0.05
+primary_rule: category-balanced color-minus-gray effect remains pointwise significant continuously for the minimum duration
+sensitivity_rule: pooled color-versus-gray Welch test at each time point
+subjects: [test001, test002, test003, test004, test005, test006, test007]
+historical_comparison: color_analyse_0727/result/final_analysis_seeg_20260806_corrected/stage01_selection/functional_selection_100-400_lf30.csv
+historical_results_overwritten: false

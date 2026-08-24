@@ -1,0 +1,847 @@
+{
+  "nodes": [
+    {
+      "id": "research_question",
+      "type": "text",
+      "text": "问题\n\n物理颜色和记忆颜色如何在 SEEG 中表征？\n\n状态：当前项目科学问题",
+      "x": 0,
+      "y": 0,
+      "width": 420,
+      "height": 220
+    },
+    {
+      "id": "current_method",
+      "type": "text",
+      "text": "当前方法合同\n\n电极筛选时间窗：100–400 ms\n解码信号：raw200\nS1：任务 1 ANOVA 颜色主效应\nS2：至少一个类别的 Welch 检验显著\nCSC：N2 ∩ (S1 ∪ S2)\n\nCanvas 当前只展示既有结果；未重新运行历史分析。",
+      "x": 0,
+      "y": 300,
+      "width": 420,
+      "height": 300
+    },
+    {
+      "id": "data_process",
+      "type": "text",
+      "text": "数据\n\n标准 HDF5 分析输入\n路径：color_analyse_0727/process_data/\n\n数据来源：seegdata + processed_data + Data/\n不把原始二进制数据展开到 Canvas。",
+      "x": 540,
+      "y": 320,
+      "width": 420,
+      "height": 240
+    },
+    {
+      "id": "stage01_selection",
+      "type": "text",
+      "text": "阶段 01 / 电极筛选\n\n功能性颜色筛选 + Norm 2 空间先验\n\n既有结果：lf30 筛选分支中，S1=19，S2=46，CSC=12。\n\n下方为代表性图。",
+      "x": 1100,
+      "y": 0,
+      "width": 420,
+      "height": 230
+    },
+    {
+      "id": "stage02_amplitude",
+      "type": "text",
+      "text": "阶段 02 / 振幅与频谱\n\nCSC 上 Task 2 灰色水果的振幅和频谱特征。\n\n代表图突出多频带描述性谱型。\n\n不能将其解释为记忆颜色编码的证据。",
+      "x": 1850,
+      "y": 0,
+      "width": 420,
+      "height": 230
+    },
+    {
+      "id": "fig_stage02",
+      "type": "file",
+      "file": "color_analyse_0727/result/final_analysis_seeg_20260806_corrected/stage02_amplitude_spectral/figures/csc_task2_spectral_100-400_raw200.png",
+      "x": 1830,
+      "y": 270,
+      "width": 680,
+      "height": 243
+    },
+    {
+      "id": "stage03_decoding",
+      "type": "text",
+      "text": "阶段 03 / 解码\n\n物理红/绿基线与灰色水果记忆颜色解码的比较。\n\n保留两张代表图，因为它们回答不同科学问题。\n\nTask 3 存在 trial 到图片身份对应关系的限制。",
+      "x": 2600,
+      "y": 0,
+      "width": 420,
+      "height": 250
+    },
+    {
+      "id": "stage04_luminance",
+      "type": "text",
+      "text": "阶段 04 / 亮度审计\n\n本阶段主要是控制与审计，因此未选择代表图。\n\n来源报告：\ncolor_analyse_0727/result/final_analysis_seeg_20260806_corrected/stage04_luminance/luminance_report.md\n\n状态：审计证据，不是主要神经结果。",
+      "x": 3960,
+      "y": 0,
+      "width": 420,
+      "height": 280
+    },
+    {
+      "id": "fig_stage07",
+      "type": "file",
+      "file": "color_analyse_0727/result/final_analysis_seeg_20260806_corrected/stage07_csc_decoding/figures/csc_all_electrodes_acc_time_combined_no_permutation.png",
+      "x": 5760,
+      "y": 290,
+      "width": 680,
+      "height": 453
+    },
+    {
+      "id": "parameter_experiment",
+      "type": "text",
+      "text": "参数实验\n\n最近完成的候选分析：连续 100 ms 电极筛选。\n\n既有结果和连续 200 ms 候选结果保持不变。\n\n候选结果：\ncolor_analyse_0727/result/continuous_selection_100ms_100-400_20260809/\n\n今后的参数实验会建立独立候选运行，保留既有分支，并与当前结果比较。",
+      "x": 8000,
+      "y": 0,
+      "width": 460,
+      "height": 330
+    },
+    {
+      "id": "stage05_hypotheses",
+      "type": "text",
+      "text": "阶段 05 / 假设检验\n\nH1：lf30 电极筛选结果支持富集。\nH2：物理颜色解码获得探索性支持。\nH3：目前没有记忆颜色组水平支持证据。\nH4：目前没有跨任务共享编码支持证据。\n\n本阶段没有选择图片；决策表和报告是代表性证据。\n\n所有方法学限制都保留在结果解释中。",
+      "x": 4500,
+      "y": 413,
+      "width": 470,
+      "height": 330
+    },
+    {
+      "id": "stage06_exploration",
+      "type": "text",
+      "text": "阶段 06 / 探索分析\n\nS1/S2 时间分辨单电极解码。\n\n代表图对比物理颜色曲线与记忆颜色曲线。\n\n状态：探索性；尚未对跨电极和跨分析分支进行全局校正。",
+      "x": 5180,
+      "y": -200,
+      "width": 440,
+      "height": 240
+    },
+    {
+      "id": "fig_stage06",
+      "type": "file",
+      "file": "color_analyse_0727/result/final_analysis_seeg_20260806_corrected/stage06_exploration/s1s2_timeresolved_single_electrode_curves_100-400_raw200.png",
+      "x": 5216,
+      "y": 338,
+      "width": 404,
+      "height": 479
+    },
+    {
+      "id": "stage07_csc",
+      "type": "text",
+      "text": "阶段 07 / CSC 解码\n\nCSC 的任务内和跨任务时频解码。\n\n选择合并时间曲线图，因为它在一张图中展示主要比较。\n\n该图不包含置换检验阴影。",
+      "x": 5940,
+      "y": -450,
+      "width": 440,
+      "height": 250
+    },
+    {
+      "id": "fig_stage08_s2",
+      "type": "file",
+      "file": "color_analyse_0727/result/final_analysis_seeg_20260806_corrected/stage08_s1_s2_single_electrode_decoding/figures/S2_memory_color_latency_coordinate.png",
+      "x": 7440,
+      "y": 700,
+      "width": 666,
+      "height": 480
+    },
+    {
+      "id": "fig_stage08_s1",
+      "type": "file",
+      "file": "color_analyse_0727/result/final_analysis_seeg_20260806_corrected/stage08_s1_s2_single_electrode_decoding/figures/S1_memory_color_latency_coordinate.png",
+      "x": 6600,
+      "y": 700,
+      "width": 666,
+      "height": 480
+    },
+    {
+      "id": "stage08_s1_s2",
+      "type": "text",
+      "text": "阶段 08 / S1 + S2 单电极\n\n记忆颜色单电极曲线、簇标签、坐标和延迟汇总。\n\n保留 S1 与 S2 两张图，因为它们代表不同的电极集合。\n\n状态：探索性名义单电极证据。",
+      "x": 6900,
+      "y": -85,
+      "width": 460,
+      "height": 250
+    },
+    {
+      "id": "fig_stage03_task3",
+      "type": "file",
+      "file": "color_analyse_0727/result/final_analysis_seeg_20260806_corrected/stage03_decoding/figures/decoding_task3_red_green_100-400_raw200.png",
+      "x": 2460,
+      "y": 588,
+      "width": 620,
+      "height": 310
+    },
+    {
+      "id": "fig_stage03_task2",
+      "type": "file",
+      "file": "color_analyse_0727/result/final_analysis_seeg_20260806_corrected/stage03_decoding/figures/decoding_task2_gray_memory_color_100-400_raw200.png",
+      "x": 3180,
+      "y": 588,
+      "width": 620,
+      "height": 310
+    },
+    {
+      "id": "stage01_continuous_selection",
+      "type": "text",
+      "text": "阶段 01 候选分支 / 连续显著筛选\n\n不对整个 100–400 ms 区间求合并均值。\n主要标准：在 100–400 ms 内，四类任务的平衡颜色−灰度效应逐时间点检验达到 p<0.05，并连续至少 200 ms。\n敏感性分析：每个时间点的 pooled Welch 检验。\n\n主要候选数量（test001→test007）：33、9、27、11、12、5、20。\n历史 S1 数量：7、0、2、6、1、0、3。\n\n该分支是探索性的，尚未替换当前电极集合。\n0–800 ms 敏感性分析数量：45、20、35、24、17、5、32。\n\n来源：\ncolor_analyse_0727/result/continuous_selection_200ms_100-400_20260807/",
+      "x": 620,
+      "y": 920,
+      "width": 620,
+      "height": 360
+    },
+    {
+      "id": "fig_stage01",
+      "type": "file",
+      "file": "color_analyse_0727/result/final_analysis_seeg_20260806_corrected/stage01_selection/figures/patch_and_csc_mni_projections_100-400_lf30.png",
+      "x": 1490,
+      "y": 785,
+      "width": 680,
+      "height": 227
+    },
+    {
+      "id": "fig_stage01_continuous",
+      "type": "file",
+      "file": "color_analyse_0727/result/continuous_selection_200ms_100-400_20260807/figures/continuous_selection_summary_lf30.png",
+      "x": 1200,
+      "y": 1420,
+      "width": 720,
+      "height": 300
+    },
+    {
+      "id": "stage01_continuous_100ms",
+      "type": "text",
+      "text": "阶段 01 候选分支 / 连续 100 ms 筛选\n\n不对整个 100–400 ms 区间求合并均值。\n主要标准：在 100–400 ms 内，四类任务的平衡颜色−灰度效应逐时间点检验达到 p<0.05，并连续至少 100 ms。\n敏感性分析：每个时间点的 pooled Welch 检验。\n\n主要候选数量（test001→test007）：33、9、27、11、12、5、20。\n历史 S1 数量：7、0、2、6、1、0、3。\n\n与连续 200 ms 版本相比，主要 category-balanced 候选数量没有增加。该分支仍为探索性结果，尚未替换当前电极集合。\n\n来源：\ncolor_analyse_0727/result/continuous_selection_100ms_100-400_20260809/",
+      "x": 620,
+      "y": 1780,
+      "width": 620,
+      "height": 380
+    },
+    {
+      "id": "fig_stage01_continuous_100ms",
+      "type": "file",
+      "file": "color_analyse_0727/result/continuous_selection_100ms_100-400_20260809/figures/continuous_selection_summary_lf30.png",
+      "x": 1200,
+      "y": 2200,
+      "width": 720,
+      "height": 300
+    },
+    {
+      "id": "stage01_rereference_sensitivity",
+      "type": "text",
+      "text": "阶段 01 新分析 / 重参考敏感性\n\n固定 Task1、lf30、−200–0 ms 基线、100–400 ms、color×category ANOVA。\n主比较限于五种参考和三个任务共同存在的 210 个目标 ROI 锚点。\n\nraw-p S1：native=17，global CAR=18，shaft CAR=8，bipolar=16，Laplacian=19。\nnative–global CAR Jaccard=0.842；Laplacian 与 native/global CAR 仅 0.125/0.121。\n五种方法均入选：test001-H9、test007-E7。\n\n状态：新探索性敏感性分析；raw p<0.05，不能替代多重比较校正。\n来源：color_analyse_0727/result/rereference_color_selection_20260824/",
+      "x": 2040,
+      "y": 1780,
+      "width": 620,
+      "height": 440
+    },
+    {
+      "id": "fig_stage01_rereference_counts",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_color_selection_20260824/comparison_figures/selected_counts_all_methods.png",
+      "x": 2740,
+      "y": 1780,
+      "width": 720,
+      "height": 360
+    },
+    {
+      "id": "stage03_rereference_decoding_no_perm",
+      "type": "text",
+      "text": "阶段 03 新分析 / 五种重参考的四类 decoding\n\n固定 raw200、16频带 log-power、−200–0 ms 基线、1–1000 ms。\n四类：Task3红绿、Task2跨水果、Task3→Task2、Task2→Task3。\n只运行真实CV；置换次数=0。\n\n各参考自身S1、被试等权：Task3最高=bipolar 0.798；Task2跨水果最高=Laplacian 0.511；两种跨任务方向最高均为native（0.509/0.562）。\n四项描述性平均：native=0.584，排名第一。固定H9/E7比较中native仍第一（0.594）。\n\n状态：描述性；没有置换检验，参考间差异不能称为显著。\n来源：color_analyse_0727/result/rereference_decoding_no_permutation_20260824/",
+      "x": 2040,
+      "y": 2300,
+      "width": 620,
+      "height": 470
+    },
+    {
+      "id": "fig_stage03_rereference_decoding",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_decoding_no_permutation_20260824/comparison_figures/method_specific_s1_all_references.png",
+      "x": 2740,
+      "y": 2300,
+      "width": 720,
+      "height": 390
+    },
+    {
+      "id": "stage03_rereference_sliding_decoding",
+      "type": "text",
+      "text": "阶段 03 新分析 / 五种重参考的时间滑窗 decoding\n\n固定 raw200、16频带 STFT log-power、256 ms窗、10 ms步长、0–800 ms；四类 decoding；置换次数=0。\n每种参考使用其自身S1电极；先在被试内平均电极，再对被试等权平均。\n\n峰值赢家：Task3红绿=Shaft CAR 0.617@100 ms；Task2跨水果=native 0.529@90 ms；Task3→Task2=native 0.524@300 ms；Task2→Task3=native 0.539@290 ms。\n四项峰值平均：Shaft CAR=0.548，描述性排名第一；native=0.541，第二。\n\n状态：描述性；没有置换检验，且在81个时间点取最大值会抬高峰值，不能解释为显著差异。\n来源：color_analyse_0727/result/rereference_sliding_decoding_no_permutation_20260824/",
+      "x": 2040,
+      "y": 2850,
+      "width": 620,
+      "height": 500
+    },
+    {
+      "id": "fig_stage03_rereference_sliding_decoding",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_sliding_decoding_no_permutation_20260824/comparison_figures/all_reference_mean_decoding_curves.png",
+      "x": 2740,
+      "y": 2850,
+      "width": 720,
+      "height": 460
+    },
+    {
+      "id": "stage01_rereference_s3_category_anova",
+      "type": "text",
+      "text": "阶段 01 新策略 / S3 类别内 ANOVA\n\n原 S1 保持不变：整体 color×category ANOVA 的颜色主效应。\n新增 S3：face/object/body/place 分别做 color vs gray 单因素 ANOVA；至少2/4类别 raw p<0.05。\nlf30、−200–0 ms基线、100–400 ms均值窗不变。\n\n共同210个电极中的S3数：native=8，Global CAR=4，Shaft CAR=2，bipolar=2，Laplacian=4。\n五种参考下共同满足S3的电极=0。\n\n状态：探索性、未校正；S3不要求各类别效应方向一致。\n来源：color_analyse_0727/result/rereference_color_selection_s3_category_anova_20260824/",
+      "x": 2040,
+      "y": 3450,
+      "width": 620,
+      "height": 450
+    },
+    {
+      "id": "fig_stage01_rereference_s3_category_anova",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_color_selection_s3_category_anova_20260824/comparison_figures/s3_counts_all_references.png",
+      "x": 2740,
+      "y": 3450,
+      "width": 720,
+      "height": 390
+    },
+    {
+      "id": "stage03_rereference_s3_sliding_decoding",
+      "type": "text",
+      "text": "阶段 03 新分析 / S3 时间滑窗 decoding\n\n各参考使用自身S3电极；raw200、16频带STFT log-power、256 ms窗、10 ms步长、0–800 ms；置换=0。\n峰值赢家：Task3红绿=Shaft CAR 0.652@170 ms；Task2跨水果=native 0.560@90 ms；Task3→Task2=bipolar 0.577@800 ms；Task2→Task3=bipolar 0.589@790 ms。\n四项峰值平均：bipolar=0.582，描述性排名第一。\n\n重要限制：bipolar仅2个电极/1名被试；其余方法也仅2–8个电极。无置换且在81个时间点取最大值，不能解释为显著优越。\n来源：color_analyse_0727/result/rereference_sliding_decoding_s3_category_anova_no_permutation_20260824/",
+      "x": 2040,
+      "y": 4000,
+      "width": 620,
+      "height": 500
+    },
+    {
+      "id": "fig_stage03_rereference_s3_sliding_decoding",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_sliding_decoding_s3_category_anova_no_permutation_20260824/comparison_figures/all_reference_mean_decoding_curves.png",
+      "x": 2740,
+      "y": 4000,
+      "width": 720,
+      "height": 460
+    },
+    {
+      "id": "stage01_rereference_s2_category_anova",
+      "type": "text",
+      "text": "阶段 01 新策略结果 / S2 类别内 ANOVA\n\nS2：face/object/body/place中至少1/4个color vs gray单因素ANOVA raw p<0.05。\nlf30、−200–0 ms基线、100–400 ms均值窗；共同210个电极。\n\nS2数：native=32（6名被试），Global CAR=37（6），Shaft CAR=37（6），bipolar=40（7），Laplacian=46（7）。\n五种参考共同S2：test004-A10、test007-D12。\n\n状态：探索性、未校正；效应方向不受约束。\n来源：color_analyse_0727/result/rereference_color_selection_s2_category_anova_20260824/",
+      "x": 2040,
+      "y": 4600,
+      "width": 620,
+      "height": 440
+    },
+    {
+      "id": "fig_stage01_rereference_s2_category_anova",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_color_selection_s2_category_anova_20260824/comparison_figures/s2_counts_all_references.png",
+      "x": 2740,
+      "y": 4600,
+      "width": 720,
+      "height": 390
+    },
+    {
+      "id": "stage03_rereference_s2_sliding_decoding",
+      "type": "text",
+      "text": "阶段 03 新分析 / S2 时间滑窗 decoding\n\n各参考使用自身S2；raw200、16频带STFT log-power、256 ms窗、10 ms步长、0–800 ms；置换=0。\n峰值赢家：Task3红绿=native 0.589@160 ms；Task2跨水果=Laplacian 0.521@610 ms；Task3→Task2=bipolar 0.523@320 ms；Task2→Task3=native 0.532@290 ms。\n四项峰值平均：native=0.538，描述性排名第一；bipolar=0.535，第二。\n\n固定A10/D12结果另存。无置换且在81个时间点取最大值，参考差异不能称为显著。\n来源：color_analyse_0727/result/rereference_sliding_decoding_s2_category_anova_no_permutation_20260824/",
+      "x": 2040,
+      "y": 5150,
+      "width": 620,
+      "height": 500
+    },
+    {
+      "id": "fig_stage03_rereference_s2_sliding_decoding",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_sliding_decoding_s2_category_anova_no_permutation_20260824/comparison_figures/all_reference_mean_decoding_curves.png",
+      "x": 2740,
+      "y": 5150,
+      "width": 720,
+      "height": 460
+    },
+    {
+      "id": "stage03_s2_s3_peak_latency_mni_y",
+      "type": "text",
+      "text": "阶段 03 新可视化 / S2与S3峰值时间 × MNI y\n\n每种策略×重参考各1张四面板图，共10张。\n横轴=电极MNI y；纵轴=单电极0–800 ms曲线的最大accuracy时间点；颜色=被试（所有图统一）；点面积=峰值accuracy（所有图统一尺度）。\n\nS2共768个电极×分析点，S3共80个；MNI y均完整。\n状态：描述性；无置换检验，峰值时间没有不确定性估计。\n来源：color_analyse_0727/result/rereference_s2_s3_peak_latency_vs_mni_y_20260824/",
+      "x": 2040,
+      "y": 5750,
+      "width": 620,
+      "height": 400
+    },
+    {
+      "id": "fig_stage03_s2_peak_latency_mni_y_native",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_s2_s3_peak_latency_vs_mni_y_20260824/S2/reference_native/mni_y_vs_peak_latency_bubble.png",
+      "x": 2740,
+      "y": 5750,
+      "width": 720,
+      "height": 450
+    },
+    {
+      "id": "fig_stage03_s3_peak_latency_mni_y_native",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_s2_s3_peak_latency_vs_mni_y_20260824/S3/reference_native/mni_y_vs_peak_latency_bubble.png",
+      "x": 3540,
+      "y": 5750,
+      "width": 720,
+      "height": 450
+    },
+    {
+      "id": "stage01_rereference_hfb110_140_selection",
+      "type": "text",
+      "text": "阶段 01 新参数实验 / 110–140 Hz高频功率筛选\n\n110–140 Hz带通→Hilbert功率→每trial相对−200–0 ms基线的dB变化；100–400 ms均值。\n四类别内color vs gray ANOVA；S2≥1/4，S3≥2/4（raw p<0.05）。\n\nS2：native=18，Global CAR=30，Shaft CAR=37，bipolar=34，Laplacian=47。\nS3：native=0，Global CAR=0，Shaft CAR=5，bipolar=3，Laplacian=1。\n五种参考共同电极：S2=0，S3=0。\n\n状态：探索性、未校正；旧lf30结果未覆盖。\n来源：color_analyse_0727/result/rereference_hfb110_140_selection_20260824/",
+      "x": 2040,
+      "y": 6300,
+      "width": 620,
+      "height": 500
+    },
+    {
+      "id": "fig_stage01_rereference_hfb110_140_selection",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_hfb110_140_selection_20260824/comparison_figures/selection_counts_all_references.png",
+      "x": 2740,
+      "y": 6300,
+      "width": 720,
+      "height": 400
+    },
+    {
+      "id": "stage03_rereference_hfb110_140_decoding",
+      "type": "text",
+      "text": "阶段 03 新分析 / 高频筛选电极的时间滑窗 decoding\n\ndecoding仍固定raw200的16频带STFT特征，仅筛选信号改为110–140 Hz功率。\nHFB-S2峰值赢家：Task3=native 0.587；Task2跨水果=bipolar 0.524；Task3→Task2=native 0.529；Task2→Task3=native 0.539。四项平均native=0.543第一。\nHFB-S3仅三种参考可解码：Laplacian四项平均=0.605最高，bipolar=0.568，Shaft CAR=0.552；但Laplacian仅1个电极，native/Global CAR无S3电极。\n\n状态：描述性；无置换，在81个时间点取峰值会抬高准确率。\n来源：result/rereference_hfb110_140_{s2,s3}_sliding_decoding_no_permutation_20260824/",
+      "x": 2040,
+      "y": 6900,
+      "width": 620,
+      "height": 570
+    },
+    {
+      "id": "fig_stage03_rereference_hfb110_140_s2_decoding",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_hfb110_140_s2_sliding_decoding_no_permutation_20260824/comparison_figures/all_reference_mean_decoding_curves.png",
+      "x": 2740,
+      "y": 6900,
+      "width": 720,
+      "height": 460
+    },
+    {
+      "id": "fig_stage03_rereference_hfb110_140_s3_decoding",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_hfb110_140_s3_sliding_decoding_no_permutation_20260824/comparison_figures/peak_accuracy_heatmap.png",
+      "x": 3540,
+      "y": 6900,
+      "width": 650,
+      "height": 450
+    },
+    {
+      "id": "stage03_hfb_peak_latency_mni_y_acc055",
+      "type": "text",
+      "text": "阶段 03 补充图 / MNI-y与单电极decoding峰值时间\n\nHFB-S2与HFB-S3各按5种重参考绘制四项decoding，共10张图。\n仅显示peak accuracy≥0.55：663/700条记录保留（S2=630，S3=33）。\n横轴=MNI y坐标，纵轴=峰值时间；颜色=被试。点面积在accuracy 0.55–0.70间指数增长，>0.70封顶；不显示大小图例。\n\n状态：描述性；峰值来自81个时间点且未做置换检验。\n来源：color_analyse_0727/result/rereference_hfb110_140_s2_s3_peak_latency_mni_y_acc055_20260824/",
+      "x": 2040,
+      "y": 7600,
+      "width": 620,
+      "height": 450
+    },
+    {
+      "id": "fig_stage03_hfb_s2_native_peak_latency_mni_y_acc055",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_hfb110_140_s2_s3_peak_latency_mni_y_acc055_20260824/HFB-S2/reference_native/mni_y_vs_peak_latency_acc_ge_055_exponential_size.png",
+      "x": 2740,
+      "y": 7600,
+      "width": 720,
+      "height": 450
+    },
+    {
+      "id": "fig_stage03_hfb_s3_shaft_peak_latency_mni_y_acc055",
+      "type": "file",
+      "file": "color_analyse_0727/result/rereference_hfb110_140_s2_s3_peak_latency_mni_y_acc055_20260824/HFB-S3/reference_shaft_car/mni_y_vs_peak_latency_acc_ge_055_exponential_size.png",
+      "x": 3540,
+      "y": 7600,
+      "width": 720,
+      "height": 450
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge_question_method",
+      "fromNode": "research_question",
+      "fromSide": "bottom",
+      "toNode": "current_method",
+      "toSide": "top",
+      "label": "defined by"
+    },
+    {
+      "id": "edge_method_data",
+      "fromNode": "current_method",
+      "fromSide": "right",
+      "toNode": "data_process",
+      "toSide": "left",
+      "label": "uses"
+    },
+    {
+      "id": "edge_data_stage01",
+      "fromNode": "data_process",
+      "fromSide": "top",
+      "toNode": "stage01_selection",
+      "toSide": "bottom",
+      "label": "input"
+    },
+    {
+      "id": "edge_stage01_stage02",
+      "fromNode": "stage01_selection",
+      "fromSide": "right",
+      "toNode": "stage02_amplitude",
+      "toSide": "left",
+      "label": "selected electrodes"
+    },
+    {
+      "id": "edge_stage02_stage03",
+      "fromNode": "stage02_amplitude",
+      "fromSide": "right",
+      "toNode": "stage03_decoding",
+      "toSide": "left",
+      "label": "features / targets"
+    },
+    {
+      "id": "edge_stage03_stage04",
+      "fromNode": "stage03_decoding",
+      "fromSide": "right",
+      "toNode": "stage04_luminance",
+      "toSide": "left",
+      "label": "control audit"
+    },
+    {
+      "id": "edge_stage04_stage05",
+      "fromNode": "stage04_luminance",
+      "fromSide": "right",
+      "toNode": "stage05_hypotheses",
+      "toSide": "left",
+      "label": "evidence"
+    },
+    {
+      "id": "edge_stage05_stage06",
+      "fromNode": "stage05_hypotheses",
+      "fromSide": "right",
+      "toNode": "stage06_exploration",
+      "toSide": "left",
+      "label": "exploration"
+    },
+    {
+      "id": "edge_stage06_stage07",
+      "fromNode": "stage06_exploration",
+      "fromSide": "right",
+      "toNode": "stage07_csc",
+      "toSide": "left",
+      "label": "CSC extension"
+    },
+    {
+      "id": "edge_stage07_stage08",
+      "fromNode": "stage07_csc",
+      "fromSide": "right",
+      "toNode": "stage08_s1_s2",
+      "toSide": "left",
+      "label": "electrode-level follow-up"
+    },
+    {
+      "id": "edge_stage08_candidate",
+      "fromNode": "stage08_s1_s2",
+      "fromSide": "right",
+      "toNode": "parameter_experiment",
+      "toSide": "left",
+      "label": "candidate branch"
+    },
+    {
+      "id": "edge_stage01_fig",
+      "fromNode": "stage01_selection",
+      "fromSide": "bottom",
+      "toNode": "fig_stage01",
+      "toSide": "top",
+      "label": "representative"
+    },
+    {
+      "id": "edge_stage02_fig",
+      "fromNode": "stage02_amplitude",
+      "fromSide": "bottom",
+      "toNode": "fig_stage02",
+      "toSide": "top",
+      "label": "representative"
+    },
+    {
+      "id": "edge_stage03_fig1",
+      "fromNode": "stage03_decoding",
+      "fromSide": "bottom",
+      "toNode": "fig_stage03_task3",
+      "toSide": "top",
+      "label": "physical color"
+    },
+    {
+      "id": "edge_stage03_fig2",
+      "fromNode": "stage03_decoding",
+      "fromSide": "bottom",
+      "toNode": "fig_stage03_task2",
+      "toSide": "top",
+      "label": "memory color"
+    },
+    {
+      "id": "edge_stage06_fig",
+      "fromNode": "stage06_exploration",
+      "fromSide": "bottom",
+      "toNode": "fig_stage06",
+      "toSide": "top",
+      "label": "representative"
+    },
+    {
+      "id": "edge_stage07_fig",
+      "fromNode": "stage07_csc",
+      "fromSide": "bottom",
+      "toNode": "fig_stage07",
+      "toSide": "top",
+      "label": "representative"
+    },
+    {
+      "id": "edge_stage08_fig1",
+      "fromNode": "stage08_s1_s2",
+      "fromSide": "bottom",
+      "toNode": "fig_stage08_s1",
+      "toSide": "top",
+      "label": "S1"
+    },
+    {
+      "id": "edge_stage08_fig2",
+      "fromNode": "stage08_s1_s2",
+      "fromSide": "right",
+      "toNode": "fig_stage08_s2",
+      "toSide": "left",
+      "label": "S2"
+    },
+    {
+      "id": "edge_stage01_continuous",
+      "fromNode": "stage01_selection",
+      "fromSide": "bottom",
+      "toNode": "stage01_continuous_selection",
+      "toSide": "top",
+      "label": "candidate branch"
+    },
+    {
+      "id": "edge_stage01_continuous_fig",
+      "fromNode": "stage01_continuous_selection",
+      "fromSide": "bottom",
+      "toNode": "fig_stage01_continuous",
+      "toSide": "top",
+      "label": "representative"
+    },
+    {
+      "id": "edge_stage01_continuous_100ms",
+      "fromNode": "stage01_selection",
+      "fromSide": "bottom",
+      "toNode": "stage01_continuous_100ms",
+      "toSide": "top",
+      "label": "100 ms candidate"
+    },
+    {
+      "id": "edge_stage01_continuous_100ms_fig",
+      "fromNode": "stage01_continuous_100ms",
+      "fromSide": "bottom",
+      "toNode": "fig_stage01_continuous_100ms",
+      "toSide": "top",
+      "label": "representative"
+    },
+    {
+      "id": "edge_stage01_rereference",
+      "fromNode": "stage01_selection",
+      "fromSide": "right",
+      "toNode": "stage01_rereference_sensitivity",
+      "toSide": "left",
+      "label": "reference sensitivity"
+    },
+    {
+      "id": "edge_stage01_rereference_fig",
+      "fromNode": "stage01_rereference_sensitivity",
+      "fromSide": "right",
+      "toNode": "fig_stage01_rereference_counts",
+      "toSide": "left",
+      "label": "comparison"
+    },
+    {
+      "id": "edge_rereference_selection_decoding",
+      "fromNode": "stage01_rereference_sensitivity",
+      "fromSide": "bottom",
+      "toNode": "stage03_rereference_decoding_no_perm",
+      "toSide": "top",
+      "label": "selected S1"
+    },
+    {
+      "id": "edge_stage03_rereference_decoding",
+      "fromNode": "stage03_decoding",
+      "fromSide": "bottom",
+      "toNode": "stage03_rereference_decoding_no_perm",
+      "toSide": "top",
+      "label": "reference sensitivity"
+    },
+    {
+      "id": "edge_stage03_rereference_decoding_fig",
+      "fromNode": "stage03_rereference_decoding_no_perm",
+      "fromSide": "right",
+      "toNode": "fig_stage03_rereference_decoding",
+      "toSide": "left",
+      "label": "four accuracies"
+    },
+    {
+      "id": "edge_rereference_fixed_to_sliding_decoding",
+      "fromNode": "stage03_rereference_decoding_no_perm",
+      "fromSide": "bottom",
+      "toNode": "stage03_rereference_sliding_decoding",
+      "toSide": "top",
+      "label": "time-resolved extension"
+    },
+    {
+      "id": "edge_stage03_rereference_sliding_decoding_fig",
+      "fromNode": "stage03_rereference_sliding_decoding",
+      "fromSide": "right",
+      "toNode": "fig_stage03_rereference_sliding_decoding",
+      "toSide": "left",
+      "label": "mean curves"
+    },
+    {
+      "id": "edge_rereference_selection_to_s3_anova",
+      "fromNode": "stage01_rereference_sensitivity",
+      "fromSide": "bottom",
+      "toNode": "stage01_rereference_s3_category_anova",
+      "toSide": "top",
+      "label": "add S3"
+    },
+    {
+      "id": "edge_stage01_rereference_s3_anova_fig",
+      "fromNode": "stage01_rereference_s3_category_anova",
+      "fromSide": "right",
+      "toNode": "fig_stage01_rereference_s3_category_anova",
+      "toSide": "left",
+      "label": "S3 counts"
+    },
+    {
+      "id": "edge_s3_anova_to_sliding_decoding",
+      "fromNode": "stage01_rereference_s3_category_anova",
+      "fromSide": "bottom",
+      "toNode": "stage03_rereference_s3_sliding_decoding",
+      "toSide": "top",
+      "label": "method-specific S3"
+    },
+    {
+      "id": "edge_stage03_rereference_s3_sliding_decoding_fig",
+      "fromNode": "stage03_rereference_s3_sliding_decoding",
+      "fromSide": "right",
+      "toNode": "fig_stage03_rereference_s3_sliding_decoding",
+      "toSide": "left",
+      "label": "mean curves"
+    },
+    {
+      "id": "edge_rereference_s3_to_s2_anova",
+      "fromNode": "stage01_rereference_s3_category_anova",
+      "fromSide": "bottom",
+      "toNode": "stage01_rereference_s2_category_anova",
+      "toSide": "top",
+      "label": ">=1 category"
+    },
+    {
+      "id": "edge_stage01_rereference_s2_anova_fig",
+      "fromNode": "stage01_rereference_s2_category_anova",
+      "fromSide": "right",
+      "toNode": "fig_stage01_rereference_s2_category_anova",
+      "toSide": "left",
+      "label": "S2 counts"
+    },
+    {
+      "id": "edge_s2_anova_to_sliding_decoding",
+      "fromNode": "stage01_rereference_s2_category_anova",
+      "fromSide": "bottom",
+      "toNode": "stage03_rereference_s2_sliding_decoding",
+      "toSide": "top",
+      "label": "method-specific S2"
+    },
+    {
+      "id": "edge_stage03_rereference_s2_sliding_decoding_fig",
+      "fromNode": "stage03_rereference_s2_sliding_decoding",
+      "fromSide": "right",
+      "toNode": "fig_stage03_rereference_s2_sliding_decoding",
+      "toSide": "left",
+      "label": "mean curves"
+    },
+    {
+      "id": "edge_s2_decoding_to_peak_latency_mni_y",
+      "fromNode": "stage03_rereference_s2_sliding_decoding",
+      "fromSide": "bottom",
+      "toNode": "stage03_s2_s3_peak_latency_mni_y",
+      "toSide": "top",
+      "label": "S2 peaks"
+    },
+    {
+      "id": "edge_s3_decoding_to_peak_latency_mni_y",
+      "fromNode": "stage03_rereference_s3_sliding_decoding",
+      "fromSide": "bottom",
+      "toNode": "stage03_s2_s3_peak_latency_mni_y",
+      "toSide": "top",
+      "label": "S3 peaks"
+    },
+    {
+      "id": "edge_peak_latency_mni_y_to_s2_fig",
+      "fromNode": "stage03_s2_s3_peak_latency_mni_y",
+      "fromSide": "right",
+      "toNode": "fig_stage03_s2_peak_latency_mni_y_native",
+      "toSide": "left",
+      "label": "S2 example"
+    },
+    {
+      "id": "edge_peak_latency_mni_y_to_s3_fig",
+      "fromNode": "fig_stage03_s2_peak_latency_mni_y_native",
+      "fromSide": "right",
+      "toNode": "fig_stage03_s3_peak_latency_mni_y_native",
+      "toSide": "left",
+      "label": "S3 example"
+    },
+    {
+      "id": "edge_rereference_selection_to_hfb110_140",
+      "fromNode": "stage01_rereference_sensitivity",
+      "fromSide": "bottom",
+      "toNode": "stage01_rereference_hfb110_140_selection",
+      "toSide": "top",
+      "label": "signal=HFB power"
+    },
+    {
+      "id": "edge_hfb110_140_selection_to_fig",
+      "fromNode": "stage01_rereference_hfb110_140_selection",
+      "fromSide": "right",
+      "toNode": "fig_stage01_rereference_hfb110_140_selection",
+      "toSide": "left",
+      "label": "counts"
+    },
+    {
+      "id": "edge_hfb110_140_selection_to_decoding",
+      "fromNode": "stage01_rereference_hfb110_140_selection",
+      "fromSide": "bottom",
+      "toNode": "stage03_rereference_hfb110_140_decoding",
+      "toSide": "top",
+      "label": "S2/S3 electrodes"
+    },
+    {
+      "id": "edge_hfb110_140_decoding_to_s2_fig",
+      "fromNode": "stage03_rereference_hfb110_140_decoding",
+      "fromSide": "right",
+      "toNode": "fig_stage03_rereference_hfb110_140_s2_decoding",
+      "toSide": "left",
+      "label": "S2 curves"
+    },
+    {
+      "id": "edge_hfb110_140_s2_to_s3_fig",
+      "fromNode": "fig_stage03_rereference_hfb110_140_s2_decoding",
+      "fromSide": "right",
+      "toNode": "fig_stage03_rereference_hfb110_140_s3_decoding",
+      "toSide": "left",
+      "label": "S3 peaks"
+    },
+    {
+      "id": "edge_hfb_decoding_to_peak_latency_mni_y_acc055",
+      "fromNode": "stage03_rereference_hfb110_140_decoding",
+      "fromSide": "bottom",
+      "toNode": "stage03_hfb_peak_latency_mni_y_acc055",
+      "toSide": "top",
+      "label": "peak spatial distribution"
+    },
+    {
+      "id": "edge_hfb_peak_latency_mni_y_acc055_to_s2_fig",
+      "fromNode": "stage03_hfb_peak_latency_mni_y_acc055",
+      "fromSide": "right",
+      "toNode": "fig_stage03_hfb_s2_native_peak_latency_mni_y_acc055",
+      "toSide": "left",
+      "label": "S2 example"
+    },
+    {
+      "id": "edge_hfb_s2_to_s3_peak_latency_mni_y_acc055_fig",
+      "fromNode": "fig_stage03_hfb_s2_native_peak_latency_mni_y_acc055",
+      "fromSide": "right",
+      "toNode": "fig_stage03_hfb_s3_shaft_peak_latency_mni_y_acc055",
+      "toSide": "left",
+      "label": "S3 example"
+    }
+  ]
+}

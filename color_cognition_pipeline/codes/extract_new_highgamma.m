@@ -4,7 +4,7 @@
 clear; clc;
 script_timer = tic;
 addpath('newanalyse');
-addpath(genpath('python_libs'));
+% addpath(genpath('python_libs')); % Removed legacy Linux python_libs
 
 cfg = newanalyse_load_run_config('Sec1_preanalyse.m', {'matlab_defaults', 'sec1_defaults'});
 subject = 'test001';
