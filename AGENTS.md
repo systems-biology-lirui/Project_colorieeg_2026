@@ -28,3 +28,7 @@
 - Preserve node IDs, positions, sizes, and unrelated user edits.
 - Use targeted, atomic Canvas updates and fail if the Canvas changed after it was read.
 - A pending figure node may become a file node only after the new figure exists and the run completed successfully.
+
+## Implementation Language Rule
+
+- **必须使用 MATLAB 代码完成**: 当前项目的所有后续数据处理、特征提取、解码（decoding）、统计置换检验以及结果可视化绘图等分析任务，必须全部使用 MATLAB 代码完成。严禁使用 Python 脚本替代 MATLAB 执行核心分析。

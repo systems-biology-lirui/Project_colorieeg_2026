@@ -48,6 +48,8 @@ Thumbs.db
 *.txt
 *.cache
 *.bmp
+*.fig
+
 
 *.xlsx
 *.nii
@@ -71,3 +73,4 @@ python_libs/
 !/home/lirui/liulab_project/ieeg/Project_colorieeg_2026/processed_data/test003/groupedData.mat
 
 /rawdata
+/ColorLocalizer_Exp

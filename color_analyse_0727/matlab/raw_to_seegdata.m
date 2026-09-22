@@ -4,7 +4,9 @@ function summary = raw_to_seegdata(project_root, eeglab_root, neuracle_plugin_ro
 % The conversion is mapping-driven rather than subject-specific. The mapping
 % CSV must contain: subject, task_num, raw_sessions, output_dir, output_stem.
 % Multiple raw sessions in one row are separated with semicolons and are
-% merged in the listed order (currently used by test005 Task 2).
+% merged in the listed order (currently used by test005 Task 2). Neuracle
+% event files may be stored either beside data.bdf or one directory above;
+% the latter are read directly so that rawdata remains unchanged.
 %
 % Example:
 %   summary = raw_to_seegdata(project_root, eeglab_root, plugin_root, mapping_csv);
@@ -43,20 +45,19 @@ for rowIndex = 1:height(mapping)
     sessionNames = split(string(mapping.raw_sessions(rowIndex)), ';');
     outputDir = fullfile(project_root, 'seegdata', string(mapping.output_dir(rowIndex)));
     outputStem = string(mapping.output_stem(rowIndex));
-    outputSet = fullfile(outputDir, outputStem + '.set');
-    outputFdt = fullfile(outputDir, outputStem + '.fdt');
+    outputMat = fullfile(outputDir, outputStem + ".mat");
     item = struct('subject', char(subject), 'task_num', taskNum, 'status', '', ...
-        'output_path', char(outputSet), 'message', '');
+        'output_path', char(outputMat), 'message', '');
 
     try
         if ~exist(outputDir, 'dir') && ~opts.dry_run
             mkdir(outputDir);
         end
-        if (isfile(outputSet) || isfile(outputFdt)) && ~opts.overwrite && ~opts.dry_run
+        if isfile(outputMat) && ~opts.overwrite && ~opts.dry_run
             item.status = 'skipped_existing';
             item.message = 'Output exists; set overwrite=true to regenerate.';
             summary(end+1) = item; %#ok<AGROW>
-            fprintf('[SKIP] %s task%d -> %s\n', subject, taskNum, outputSet);
+            fprintf('[SKIP] %s task%d -> %s\n', subject, taskNum, outputMat);
             continue;
         end
 
@@ -70,19 +71,36 @@ for rowIndex = 1:height(mapping)
             if ~isfile(dataFile)
                 error('Missing data.bdf: %s', dataFile);
             end
-            if ~isfile(eventFile) && isfile(eventSource) && ~opts.dry_run
-                copyfile(eventSource, eventFile);
-            end
-            if ~isfile(eventFile)
-                error('Missing evt.bdf: %s', eventFile);
+            if isfile(eventFile)
+                eventPath = eventFile;
+                importFiles = {'data.bdf', 'evt.bdf'};
+                attachEventAfterImport = false;
+            elseif isfile(eventSource)
+                eventPath = eventSource;
+                importFiles = {'data.bdf'};
+                attachEventAfterImport = true;
+            else
+                error('Missing evt.bdf: checked %s and %s', eventFile, eventSource);
             end
             if opts.dry_run
-                fprintf('[CHECK] %s task%d part%d: %s\n', subject, taskNum, partIndex, foldname);
+                fprintf('[CHECK] %s task%d part%d: data=%s event=%s\n', ...
+                    subject, taskNum, partIndex, dataFile, eventPath);
                 continue;
             end
 
             fprintf('[IMPORT] %s task%d part%d: %s\n', subject, taskNum, partIndex, foldname);
-            partSets{partIndex} = pop_importNeuracle({'data.bdf', 'evt.bdf'}, char(foldname));
+            partSets{partIndex} = pop_importNeuracle(importFiles, char(foldname));
+            if attachEventAfterImport
+                eventHeader = read_bdf(char(eventPath));
+                rawEvents = cell2mat(eventHeader.event);
+                importedEvents = struct('type', {}, 'latency', {});
+                for eventIndex = 1:numel(rawEvents)
+                    importedEvents(eventIndex).type = rawEvents(eventIndex).eventvalue; %#ok<AGROW>
+                    importedEvents(eventIndex).latency = round( ...
+                        rawEvents(eventIndex).offset_in_sec * partSets{partIndex}.srate); %#ok<AGROW>
+                end
+                partSets{partIndex}.event = importedEvents;
+            end
             partSets{partIndex} = eeg_checkset(partSets{partIndex});
         end
 
@@ -95,14 +113,22 @@ for rowIndex = 1:height(mapping)
                 EEG = pop_mergeset(EEG, partSets{partIndex}, 1);
                 EEG = eeg_checkset(EEG);
             end
-            EEG.setname = char(outputStem);
-            EEG = pop_saveset(EEG, 'filename', char(outputStem + '.set'), 'filepath', char(outputDir));
+            
+            % 提取标准变量: data (channel*time), chanel_name, event, fs
+            data = single(EEG.data);
+            chanel_name = {EEG.chanlocs.labels}';
+            channel_name = chanel_name; %#ok<NASGU>
+            event = EEG.event;
+            fs = double(EEG.srate);
+            
+            save(outputMat, 'data', 'chanel_name', 'channel_name', 'event', 'fs', '-v7.3');
+            
             EEG = [];
             ALLEEG = [];
             CURRENTSET = [];
             item.status = 'converted';
-            item.message = sprintf('%d raw session(s) merged', numel(sessionNames));
-            fprintf('[DONE] %s task%d -> %s\n', subject, taskNum, outputSet);
+            item.message = sprintf('%d raw session(s) merged, saved to .mat', numel(sessionNames));
+            fprintf('[DONE] %s task%d -> %s\n', subject, taskNum, outputMat);
         end
     catch ME
         item.status = 'error';
